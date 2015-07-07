@@ -127,6 +127,7 @@ GrayCodePattern::Params::Params()
 GrayCodePattern_Impl::GrayCodePattern_Impl(const GrayCodePattern::Params &parameters) :
     params(parameters)
 {
+  computeNumberOfPatternImages();
   _darkColor = Scalar(0, 0, 0);
   _lightColor = Scalar(255, 255, 255);
   darkThreshold = 40;    // 3D_underworld default value
@@ -137,8 +138,6 @@ bool GrayCodePattern_Impl::generate(OutputArrayOfArrays pattern, const Scalar da
 {
   _darkColor = darkColor;
   _lightColor = lightColor;
-
-  computeNumberOfPatternImages();
 
   std::vector<Mat>& pattern_ = *(std::vector<Mat>*) pattern.getObj();
   pattern_.resize(numOfPatternImages);
@@ -260,8 +259,8 @@ bool GrayCodePattern_Impl::decode(InputArrayOfArrays patternImages, InputArrayOf
 
       std::vector<Point> **camsPixels = new std::vector<Point>*[acquired_pattern.size()];
       std::vector<Point>* camPixels;
-      std::vector<Mat> decoded;
-      decoded.resize(4);
+      //std::vector<Mat> decoded;
+      //decoded.resize(4);
 
       for( int k = 0; k < (int) acquired_pattern.size(); k++ )
         {
