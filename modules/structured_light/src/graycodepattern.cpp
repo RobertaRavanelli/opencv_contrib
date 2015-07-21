@@ -259,8 +259,6 @@ bool GrayCodePattern_Impl::decode(InputArrayOfArrays patternImages, InputArrayOf
 
       std::vector<Point> **camsPixels = new std::vector<Point>*[acquired_pattern.size()];
       std::vector<Point>* camPixels;
-      //std::vector<Mat> decoded;
-      //decoded.resize(4);
 
       for( int k = 0; k < (int) acquired_pattern.size(); k++ )
         {
@@ -323,6 +321,8 @@ bool GrayCodePattern_Impl::decode(InputArrayOfArrays patternImages, InputArrayOf
 
         }
 
+      delete[] camsPixels;
+      delete[]  camPixels;
       return true;
     }  // end if flags
 
