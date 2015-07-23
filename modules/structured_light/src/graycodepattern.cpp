@@ -166,7 +166,7 @@ bool GrayCodePattern_Impl::generate(OutputArrayOfArrays pattern, const Scalar da
               flag = 0;
             }
 
-          for( int i = 0; i < params.height; i++ )  // columns loop
+          for( int i = 0; i < params.height; i++ )  // rows loop
             {
               Vec3b pixel_color;
 
@@ -184,7 +184,7 @@ bool GrayCodePattern_Impl::generate(OutputArrayOfArrays pattern, const Scalar da
               else
                 pixel_color = Vec3b((uchar) darkColor[0], (uchar) darkColor[1], (uchar) darkColor[2]);
 
-              pattern_[2 * numOfColImgs - 2 * k - 1].at<Vec3b>(i, j) = pixel_color;
+              pattern_[2 * numOfColImgs - 2 * k - 1].at<Vec3b>(i, j) = pixel_color;// inverse
             }
 
           prevRem = rem;
@@ -374,9 +374,7 @@ void GrayCodePattern_Impl::computeShadowMasks(InputArrayOfArrays darkImages, Inp
                 }
             }
         }
-
     }
-
 }
 
 // Generates the images needed for shadowMasks computation
@@ -407,7 +405,7 @@ bool GrayCodePattern_Impl::getProjPixel(InputArrayOfArrays patternImages, int x,
       val1 = _patternImages[count * 2].at<uchar>(Point(x, y));
       val2 = _patternImages[count * 2 + 1].at<uchar>(Point(x, y));
 
-      //check if intensity deference is in a valid rage
+      //check if intensity difference is in a valid range
       if( abs(val1 - val2) < lightThreshold )
         error = true;
 
@@ -425,8 +423,8 @@ bool GrayCodePattern_Impl::getProjPixel(InputArrayOfArrays patternImages, int x,
   for( int count = 0; count < numOfColImgs; count++ )
     {
 
-      double val1 = _patternImages[count * 2 + numOfColImgs * 2].at<uchar>(Point(x, y));
-      double val2 = _patternImages[count * 2 + numOfColImgs * 2 + 1].at<uchar>(Point(x, y));
+      double val1 = _patternImages[count * 2 + numOfRowImgs * 2].at<uchar>(Point(x, y));
+      double val2 = _patternImages[count * 2 + numOfRowImgs * 2 + 1].at<uchar>(Point(x, y));
 
       // check if the difference between the values of the normal and it's inverse projection image is valid
       if( abs(val1 - val2) < lightThreshold )
