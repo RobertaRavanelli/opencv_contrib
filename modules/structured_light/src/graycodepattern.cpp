@@ -291,7 +291,7 @@ bool GrayCodePattern_Impl::decode(InputArrayOfArrays patternImages, InputArrayOf
       std::vector<Point> cam1Pixs, cam2Pixs;
 
       Mat& disparityMap_ = *(Mat*) disparityMap.getObj();
-      disparityMap_ = Mat(params.height, params.width, CV_64F);
+      disparityMap_ = Mat(cam_height, cam_width, CV_64F);
 
       for( int i = 0; i < params.width; i++ )
         {
@@ -305,19 +305,31 @@ bool GrayCodePattern_Impl::decode(InputArrayOfArrays patternImages, InputArrayOf
 
               Point p1;
               Point p2;
-              double disp = 0;
+
+              double sump1x = 0;
+              double sump2x = 0;
+
               for( int c1 = 0; c1 < (int) cam1Pixs.size(); c1++ )
                 {
                   p1 = cam1Pixs[c1];
-                  for( int c2 = 0; c2 < (int) cam2Pixs.size(); c2++ )
-                    {
-                      p2 = cam2Pixs[c2];
-                      disp += std::sqrt((double) ((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y)));
-                    }
+                  sump1x += p1.x;
                 }
-              disp /= (cam1Pixs.size() + cam2Pixs.size());
-              disparityMap_.at<double>(j, i) = disp;
-              disp = 0;
+              for( int c2 = 0; c2 < (int) cam2Pixs.size(); c2++ )
+                {
+                  p2 = cam2Pixs[c2];
+                  sump2x += p2.x;
+                }
+
+              sump2x /= cam2Pixs.size();
+              sump1x /= cam1Pixs.size();
+              for( int c1 = 0; c1 < (int) cam1Pixs.size(); c1++ )
+                {
+                  p1 = cam1Pixs[c1];
+                  disparityMap_.at<double>(p1.y, p1.x) = (double) (sump2x - sump1x);
+                }
+
+              sump2x = 0;
+              sump1x = 0;
             }
         }
 
