@@ -1,0 +1,113 @@
+/*M///////////////////////////////////////////////////////////////////////////////////////
+ //
+ //  IMPORTANT: READ BEFORE DOWNLOADING, COPYING, INSTALLING OR USING.
+ //
+ //  By downloading, copying, installing or using the software you agree to this license.
+ //  If you do not agree to this license, do not download, install,
+ //  copy or use the software.
+ //
+ //
+ //                        Intel License Agreement
+ //                For Open Source Computer Vision Library
+ //
+ // Copyright (C) 2000, Intel Corporation, all rights reserved.
+ // Third party copyrights are property of their respective owners.
+ //
+ // Redistribution and use in source and binary forms, with or without modification,
+ // are permitted provided that the following conditions are met:
+ //
+ //   * Redistribution's of source code must retain the above copyright notice,
+ //     this list of conditions and the following disclaimer.
+ //
+ //   * Redistribution's in binary form must reproduce the above copyright notice,
+ //     this list of conditions and the following disclaimer in the documentation
+ //     and/or other materials provided with the distribution.
+ //
+ //   * The name of Intel Corporation may not be used to endorse or promote products
+ //     derived from this software without specific prior written permission.
+ //
+ // This software is provided by the copyright holders and contributors "as is" and
+ // any express or implied warranties, including, but not limited to, the implied
+ // warranties of merchantability and fitness for a particular purpose are disclaimed.
+ // In no event shall the Intel Corporation or contributors be liable for any direct,
+ // indirect, incidental, special, exemplary, or consequential damages
+ // (including, but not limited to, procurement of substitute goods or services;
+ // loss of use, data, or profits; or business interruption) however caused
+ // and on any theory of liability, whether in contract, strict liability,
+ // or tort (including negligence or otherwise) arising in any way out of
+ // the use of this software, even if advised of the possibility of such damage.
+ //
+ //M*/
+
+#include "test_precomp.hpp"
+#include "opencv2/opencv.hpp"
+
+using namespace std;
+using namespace cv;
+
+/****************************************************************************************\
+*           Decoding test                 *
+ \****************************************************************************************/
+class CV_DecodeTest : public cvtest::BaseTest
+{
+ public:
+  CV_DecodeTest();
+  ~CV_DecodeTest();
+ protected:
+  void run(int);
+
+};
+
+void CV_DecodeTest::run(int)
+{
+  // Setup GraycodePattern parameters
+  structured_light::GrayCodePattern::Params params;
+
+  // Using default projector resolution (1024 x 768)
+  Ptr<structured_light::GrayCodePattern> graycode = structured_light::GrayCodePattern::create();
+
+  // Storage for pattern
+  std::vector<Mat> pattern;
+
+  // Using default pattern color (black and white)
+  graycode->generate(pattern);
+
+  // Convert to gray because getProjPixel (and decode) want grayscale images as input
+  for( size_t i = 0; i < pattern.size(); i++ )
+    {
+      cvtColor(pattern[i], pattern[i], COLOR_RGB2GRAY);
+    }
+
+  Point projPixel;
+  size_t image_width = pattern[0].cols;
+  size_t image_height = pattern[0].rows;
+
+  for( size_t i = 0; i < image_width; i++ )
+    {
+      for( size_t j = 0; j < image_height; j++ )
+        {
+          //for a (x,y) pixel of the camera returns the corresponding projector pixel by calculating the decimal number
+          bool error = graycode->getProjPixel(pattern, i, j, projPixel);
+
+          EXPECT_FALSE(error);
+
+          cout << "i\t" << i << "\tj\t" << j << "\tp.x\t" << projPixel.x << "\tp.y\t" << projPixel.y << endl;
+          EXPECT_EQ(projPixel.y, j);
+          EXPECT_EQ(projPixel.x, i);
+        }
+    }
+
+}
+
+CV_DecodeTest::CV_DecodeTest()
+{
+}
+CV_DecodeTest::~CV_DecodeTest()
+{
+}
+
+TEST(GrayCodePattern, decode)
+{
+  CV_DecodeTest test;
+  test.safe_run();
+}
