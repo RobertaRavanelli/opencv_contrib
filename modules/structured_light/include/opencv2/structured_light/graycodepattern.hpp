@@ -40,8 +40,8 @@
  //
  //M*/
 
-#ifndef __OPENCV_STRUCTURED_LIGHT_HPP__
-#define __OPENCV_STRUCTURED_LIGHT_HPP__
+#ifndef __OPENCV_GRAY_CODE_PATTERN_HPP__
+#define __OPENCV_GRAY_CODE_PATTERN_HPP__
 
 #include "opencv2/core.hpp"
 
@@ -50,44 +50,64 @@ namespace structured_light {
 //! @addtogroup structured_light
 //! @{
 
-//! type of the decoding algorithm
-enum
-{
-  DECODE_3D_UNDERWORLD = 0  //!< K. Herakleous, C. Poullis. “3DUNDERWORLD-SLS: An Open-Source Structured-Light Scanning System for Rapid Geometry Acquisition”, ICT-TR-2014-01
-// other algorithms can be implemented
-};
-
-/** @brief Abstract base class for generating and decoding structured light pattern.
+/** @brief Class implementing the gray code pattern
  */
-class CV_EXPORTS_W StructuredLightPattern : public virtual Algorithm
+class CV_EXPORTS_W GrayCodePattern : public StructuredLightPattern
 {
  public:
-  /** @brief Generates the structured light pattern.
 
-   @param patternImages The generated pattern: a std::vector<cv::Mat>
-   @param darkColor The dark color of the pattern; default is black.
-   @param lightColor The light color of the pattern; default is white.
+  /** @brief Parameters of StructuredLightPattern constructor.
+   *  @param width Projector's width.
+   *  @param height Projector's height.
+   */
+  struct CV_EXPORTS_W_SIMPLE Params
+  {
+    CV_WRAP
+    Params();CV_PROP_RW
+    int width;CV_PROP_RW
+    int height;
+  };
+
+  /** @brief Constructor
+   @param parameters GrayCodePattern parameters GrayCodePattern::Params: the width and the height of the projector.
    */
   CV_WRAP
-  virtual bool generate(OutputArrayOfArrays patternImages, const Scalar & darkColor = Scalar(0, 0, 0),
-                        const Scalar & lightColor = Scalar(255, 255, 255)) = 0;
+  static Ptr<GrayCodePattern> create(const GrayCodePattern::Params &parameters = GrayCodePattern::Params());
 
-  /** @brief Decodes the structured light pattern, generating a disparity map
+  /** @brief Sets the value for set the value for light threshold, needed for decoding.
 
-   @param patternImages The acquired pattern images to decode, laded as grayscale and previously rectified.
-   @param disparityMap The decoding result: a disparity map.
-   @param darkImages The all-dark images needed for shadowMasks computation.
-   @param lightImages The all-light images needed for shadowMasks computation.
-   @param flags Flags setting decoding algorithms.
+   @param value The desired light threshold value.
    */
   CV_WRAP
-  virtual bool decode(InputArrayOfArrays patternImages, OutputArray disparityMap, InputArrayOfArrays darkImages =
-                          noArray(),
-                      InputArrayOfArrays lightImages = noArray(), int flags = DECODE_3D_UNDERWORLD) const = 0;
+  virtual void setLightThreshold(size_t value) = 0;
+
+  /** @brief Sets the value for dark threshold, needed for decoding.
+
+   @param value The desired dark threshold value.
+   */
+  CV_WRAP
+  virtual void setDarkThreshold(size_t value) = 0;
+
+  /** @brief Generates The all-dark and all-light images needed for shadowMasks computation.
+   *
+   *  @param darkImage The generated all-dark image.
+   *  @param lightImage The generated all-light image.
+   */
+  CV_WRAP
+  virtual void getImagesForShadowMasks(InputOutputArray darkImage, InputOutputArray lightImage) const = 0;
+
+  /** @brief For a (x,y) pixel of the camera returns the corresponding projector pixel.
+   *
+   *  @param patternImages The acquired pattern images.
+   *  @param x x coordinate of the image pixel.
+   *  @param y y coordinate of the image pixel.
+   *  @param p_out Projectors pixel corresponding to the camera's pixel.
+   */
+  CV_WRAP
+  virtual bool getProjPixel(InputArrayOfArrays patternImages, int x, int y, Point &p_out) const = 0;
 };
 
 //! @}
-
 }
 }
 #endif
