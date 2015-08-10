@@ -1,13 +1,16 @@
-// To compile: g++ ./dispTo3D.cpp `pkg-config --cflags --libs opencv` -o ./dispTo3D && ./dispTo3D
+// To build and run: g++ ./dispTo3D.cpp `pkg-config --cflags --libs opencv` -o ./dispTo3D && ./dispTo3D
 // From the disparity previously comuted, using the calibration parameters,
 // the program conputes the corresponding 3D point cloud
 
 #include <iostream>
 #include <fstream>
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/calib3d/calib3d.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/opencv.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/calib3d.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/viz.hpp>
+#include <opencv2/rgbd.hpp>
 
 using namespace cv;
 using namespace std;
@@ -17,9 +20,17 @@ int main()
   std::string path = "/home/roberta/Sviluppo/DemoOpencv/";
   // Load disparity previously computed
   cv::Mat disp, tmp, cm_disp;
-  cv::FileStorage fs_disp(path + "disparity_atzec5.yml", FileStorage::READ);
+  cv::FileStorage fs_disp(path + "30_07/disparity.yml", FileStorage::READ);
   fs_disp["disparity"] >> disp;
   fs_disp.release();
+
+  // Loading the Q matrix
+  cv::Mat Q;
+  cv::FileStorage fs_extr(path + "30_07/Q.yml", FileStorage::READ);
+  fs_extr["Q"] >> Q;
+
+  // Loading the color image
+  Mat color = cv::imread(path + "color.png", cv::IMREAD_COLOR);
 
   // Visualize the disparity
   double min, max;
@@ -27,45 +38,40 @@ int main()
   cv::convertScaleAbs(disp, tmp, 255 / (max - min));
   applyColorMap(tmp, cm_disp, COLORMAP_JET);
   // Show the result
-  imshow("cm disparity", cm_disp);
+  cv::resize(cm_disp, cm_disp, Size(640, 480));
+  imshow("cm disparity m", cm_disp);
+  cv::waitKey();
 
-  // Loading the Q matrix
-  cv::Mat Q;
-  cv::FileStorage fs_extr(path + "extrinsics.yml", FileStorage::READ);
-  fs_extr["Q"] >> Q;
+  // Computing the mask
+  Mat thresholded_disp, dst;
+  threshold(tmp, thresholded_disp, 0, 255, cv::THRESH_OTSU + cv::THRESH_BINARY);
+  cv::resize(thresholded_disp, dst, Size(640, 480));
+  imshow("threshold disp otsu", dst);
+  cv::waitKey();
 
   // Computing the point cloud
   Mat pointcloud;
   disp.convertTo(disp, CV_32FC1);
-  cv::reprojectImageTo3D(disp, pointcloud, Q, false, -1);
-  cv::imshow("point cloud", pointcloud);
+  cv::reprojectImageTo3D(disp, pointcloud, Q, true, -1);
 
-  // Saving the computed point cloud as a file (it can be opened in meshlab)
-  ofstream myfile;
-  myfile.open("/home/roberta/Sviluppo/DemoOpencv/pointcloud.xyz");
-  for( int j = 0; j < pointcloud.rows; j++ )
-    {
-      for( int i = 0; i < pointcloud.cols; i++ )
-      //for( int j = 0; j < pointcloud.rows; j++ )
-        {
-          //couut << pointcloud.at<float>(j, i) << endl;
-          Vec3f intensity = pointcloud.at<Vec3f>(j, i);
-          float X = intensity.val[0];
-          float Y = intensity.val[1];
-          float Z = intensity.val[2];
-          myfile << X << '\t' << Y << '\t' << Z << endl;
-        }
-    }
-  myfile.close();
+  // Apply the mask
+  Mat pointcloud_tresh, color_tresh;
+  pointcloud.copyTo(pointcloud_tresh, thresholded_disp);
+  color.copyTo(color_tresh, thresholded_disp);
 
-  FileStorage fsout;
-  fsout.open(path + "pointcloud.yml", CV_STORAGE_WRITE);
-  if( fsout.isOpened() )
-    {
-      fsout << "pointcloud" << pointcloud;
-      fsout.release();
-    } else
-    cout << "Error: can not save the point cloud\n";
+  // Visualize the point cloud with viz
+  viz::WCloud b =viz::WCloud(pointcloud_tresh / 1000, color_tresh);
+  viz::Viz3d myWindow("show_cloud_with_color");
+  myWindow.setBackgroundMeshLab();
+  myWindow.showWidget("coosys", viz::WCoordinateSystem());
+  myWindow.showWidget("pointcloud", viz::WCloud(pointcloud_tresh / 1000, color_tresh));
+  myWindow.showWidget("text2d", viz::WText("Point cloud", Point(20, 20), 20, viz::Color::green()));
+  myWindow.spin();
+
+  cv::Mat mask, plane_coefficients;
+  cv::rgbd::RgbdPlane plane();
+
   cv::waitKey(0);
   return 0;
 }
+

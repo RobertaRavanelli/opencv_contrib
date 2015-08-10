@@ -46,6 +46,7 @@
  #endif*/
 
 #include "opencv2/structured_light/structured_light.hpp"
+#include "opencv2/structured_light/graycodepattern.hpp"
 
 /** @defgroup structured_light Structure Light API
 
