@@ -1,10 +1,10 @@
 // To compile: g++ ./decode.cpp `pkg-config --cflags --libs opencv` -o ./decode && ./decode
 
 #include <iostream>
-#include <opencv2/core/core.hpp>
-#include <opencv2/structured_light/structured_light.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include "opencv2/imgproc/imgproc.hpp"
+#include <opencv2/core.hpp>
+#include <opencv2/structured_light.hpp>
+#include <opencv2/highgui.hpp>
+#include "opencv2/imgproc.hpp"
 
 using namespace cv;
 using namespace std;
@@ -44,10 +44,6 @@ int main()
     }
 
   Mat disparityMap;
-  vector<Mat> camerasMatrix;
-  vector<Mat> camerasDistCoeffs;
-  vector<Mat> camerasRotationMatrix;
-  vector<Mat> camerasTranslationVector;
   vector<Mat> darkImages;
   vector<Mat> lightImages;
 
@@ -100,8 +96,7 @@ int main()
   darkImages[0] = cv::imread(path + "atzec/PHOTOS/Dataset5/L/AI4X7312.JPG", 0);
   darkImages[1] = cv::imread(path + "atzec/PHOTOS/Dataset5/R/AI2X1016.JPG", 0);
 
-  bool decoded = SL->decode(captured_pattern, camerasMatrix, camerasDistCoeffs, camerasRotationMatrix,
-                            camerasTranslationVector, disparityMap, darkImages, lightImages,
+  bool decoded = SL->decode(captured_pattern, disparityMap, darkImages, lightImages,
                             cv::structured_light::DECODE_3D_UNDERWORLD);
 
   if( decoded )
@@ -117,6 +112,7 @@ int main()
       cv::Mat cm_img0;
       applyColorMap(disparityMap, cm_img0, COLORMAP_JET);
       // Show the result
+      cv::resize(cm_img0, cm_img0, Size(640,480));
       imshow("cm disparity", cm_img0);
     }
 

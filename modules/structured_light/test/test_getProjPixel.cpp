@@ -91,7 +91,7 @@ void CV_DecodeTest::run(int)
 
           EXPECT_FALSE(error);
 
-          cout << "i\t" << i << "\tj\t" << j << "\tp.x\t" << projPixel.x << "\tp.y\t" << projPixel.y << endl;
+          //cout << "i\t" << i << "\tj\t" << j << "\tp.x\t" << projPixel.x << "\tp.y\t" << projPixel.y << endl;
           EXPECT_EQ(projPixel.y, j);
           EXPECT_EQ(projPixel.x, i);
         }
@@ -106,7 +106,7 @@ CV_DecodeTest::~CV_DecodeTest()
 {
 }
 
-TEST(GrayCodePattern, decode)
+TEST(GrayCodePattern, getProjPixel)
 {
   CV_DecodeTest test;
   test.safe_run();
