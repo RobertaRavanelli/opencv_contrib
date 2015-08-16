@@ -40,7 +40,7 @@
  //M*/
 
 #include "test_precomp.hpp"
-#include "opencv2/opencv.hpp"
+//#include "opencv2/opencv.hpp"
 #include <opencv2/rgbd.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
@@ -52,7 +52,7 @@ using namespace std;
 using namespace cv;
 
 const string STRUCTURED_LIGHT_DIR = "structured_light";
-const string FOLDER_DATA = "data";
+const string FOLDER_DATA = "data";  // "scatola_";  //"data";
 
 /****************************************************************************************\
 *           Plane test                 *
@@ -64,7 +64,7 @@ class CV_PlaneTest : public cvtest::BaseTest
   ~CV_PlaneTest();
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
-  // From rgbd modules
+  // From rgbd module
   /** Structure defining a plane. The notations are from the second paper */
   class PlaneBase
   {
@@ -212,114 +212,172 @@ CV_PlaneTest::~CV_PlaneTest()
 
 }
 
-
-
 void CV_PlaneTest::run(int)
 {
   string folder = cvtest::TS::ptr()->get_data_path() + "/" + STRUCTURED_LIGHT_DIR + "/" + FOLDER_DATA + "/";
-   std::vector<std::vector<cv::Mat> > captured_pattern;
+  vector<vector<Mat> > captured_pattern;
+  captured_pattern.resize(2);
+  captured_pattern[0].resize(42);
+  captured_pattern[1].resize(42);
 
-   captured_pattern.resize(2);
-   captured_pattern[0].resize(42);
-   captured_pattern[1].resize(42);
+  FileStorage fs(folder + "calibrationParameters.yml", FileStorage::READ);
+  if( !fs.isOpened() )
+    {
+      ts->set_failed_test_info(cvtest::TS::FAIL_INVALID_TEST_DATA);
+      return;
+    }
 
-  // Load disparity previously computed: here I must compute the disparity, not load
-  cv::Mat disp, tmp, cm_disp;
-  cv::FileStorage fs_disp(folder + "disparity.yml", FileStorage::READ);
-  fs_disp["disparity"] >> disp;
-  fs_disp.release();
+  Mat cam1intrinsics, cam1distCoeffs, cam2intrinsics, cam2distCoeffs, R, T;
 
-  // Loading the Q matrix
-  cv::Mat Q;
-  cv::FileStorage fs_extr(folder + "Q.yml", FileStorage::READ);
-  //cv::FileStorage fs_extr(path + "11_08/Q.yml", FileStorage::READ);
-  fs_extr["Q"] >> Q;
+  Mat color = imread(folder + "pattern_cam1_im43.png");
+  Size imagesSize = color.size();
 
-  // Loading the color image
-  Mat color = cv::imread(folder + "color.png", cv::IMREAD_COLOR);
+  fs["cam1_intrinsics"] >> cam1intrinsics;
+  fs["cam2_intrinsics"] >> cam2intrinsics;
+  fs["cam1_distorsion"] >> cam1distCoeffs;
+  fs["cam2_distorsion"] >> cam2distCoeffs;
+  fs["R"] >> R;
+  fs["T"] >> T;
 
-  // Visualize the disparity
-  double min, max;
-  cv::minMaxIdx(disp, &min, &max);
-  cv::convertScaleAbs(disp, tmp, 255 / (max - min));
-  applyColorMap(tmp, cm_disp, COLORMAP_JET);
-  // Show the result
-  cv::resize(cm_disp, cm_disp, Size(640, 480));
-  imshow("cm disparity m", cm_disp);
+  // Stereo rectify
+  Mat R1, R2, P1, P2, Q;
+  Rect validRoi[2];
+  stereoRectify(cam1intrinsics, cam1distCoeffs, cam2intrinsics, cam2distCoeffs, imagesSize, R, T, R1, R2, P1, P2, Q, 0,
+                -1, imagesSize, &validRoi[0], &validRoi[1]);
 
-  // Computing the mask
+  Mat map1x, map1y, map2x, map2y;
+  initUndistortRectifyMap(cam1intrinsics, cam1distCoeffs, R1, P1, imagesSize, CV_32FC1, map1x, map1y);
+  initUndistortRectifyMap(cam2intrinsics, cam2distCoeffs, R2, P2, imagesSize, CV_32FC1, map2x, map2y);
+
+  for( size_t i = 0; i < captured_pattern[1].size(); i++ )
+    {
+      ostringstream name1;
+
+      name1 << "pattern_cam1_im" << i + 1 << ".png";
+      captured_pattern[0][i] = imread(folder + name1.str(), 0);
+      remap(captured_pattern[0][i], captured_pattern[0][i], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+
+      ostringstream name2;
+      name2 << "pattern_cam2_im" << i + 1 << ".png";
+      captured_pattern[1][i] = imread(folder + name2.str(), 0);
+      remap(captured_pattern[1][i], captured_pattern[1][i], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+
+    }
+  structured_light::GrayCodePattern::Params params;
+  params.width = 1280;
+  params.height = 800;
+  // Set up GraycodePattern with params
+  Ptr<structured_light::GrayCodePattern> graycode = structured_light::GrayCodePattern::create(params);
+
+  vector<Mat> darkImages;
+  vector<Mat> lightImages;
+
+  darkImages.resize(2);
+  lightImages.resize(2);
+
+  cvtColor(color, lightImages[0], COLOR_RGB2GRAY);
+  lightImages[1] = imread(folder + "pattern_cam2_im43.png", 0);
+  darkImages[0] = imread(folder + "pattern_cam1_im44.png", 0);
+  darkImages[1] = imread(folder + "pattern_cam2_im44.png", 0);
+
+  remap(color, color, map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+
+  remap(lightImages[0], lightImages[0], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+  remap(lightImages[1], lightImages[1], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+
+  remap(darkImages[0], darkImages[0], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+  remap(darkImages[1], darkImages[1], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+
+  graycode->setDarkThreshold(55);
+  graycode->setLightThreshold(10);
+
+  Mat disparityMap;
+  bool decoded = graycode->decode(captured_pattern, disparityMap, darkImages, lightImages,
+                                  structured_light::DECODE_3D_UNDERWORLD);
+  EXPECT_TRUE(decoded);
+
+  Mat cm_disp, scaledDisparityMap;
+  double min;
+  double max;
+  minMaxIdx(disparityMap, &min, &max);
+  convertScaleAbs(disparityMap, scaledDisparityMap, 255 / (max - min));
+
+  // Computing the mask to remove background
   Mat thresholded_disp, dst;
-  threshold(tmp, thresholded_disp, 0, 255, cv::THRESH_OTSU + cv::THRESH_BINARY);
+  threshold(scaledDisparityMap, thresholded_disp, 0, 255, THRESH_OTSU + THRESH_BINARY);
 
   // Computing the point cloud
   Mat pointcloud;
-  disp.convertTo(disp, CV_32FC1);
-  cv::reprojectImageTo3D(disp, pointcloud, Q, true, -1);
-  pointcloud = pointcloud /1000;
+  disparityMap.convertTo(disparityMap, CV_32FC1);
+  reprojectImageTo3D(disparityMap, pointcloud, Q, true, -1);
+  // from mm (unit of calibration) to m
+  pointcloud = pointcloud / 1000;
 
   // Apply the mask
   Mat pointcloud_tresh, color_tresh;
   pointcloud.copyTo(pointcloud_tresh, thresholded_disp);
   color.copyTo(color_tresh, thresholded_disp);
 
-  Mat plane_mask;
-  std::vector<Vec4f> plane_coefficients;
-  vector<float> coeff;
+  Mat plane_mask, tmp;
+  vector<Vec4f> plane_coefficients;
   rgbd::RgbdPlane plane_computer;
-  //plane_computer.setThreshold(0.01);
-  plane_computer.setMinSize(61000);
-  plane_computer(pointcloud_tresh , plane_mask, plane_coefficients);
+  plane_computer.setThreshold(0.01);
+  plane_computer.setMinSize(610500);
+  plane_computer(pointcloud_tresh, plane_mask, plane_coefficients);
 
-  cv::resize(plane_mask, tmp, Size(640, 480));
-  imshow("plane_mask", tmp);
   int n_planes = (int) plane_coefficients.size();
 
+  cout << n_planes << " identified planes" << endl << endl;
+  for( int i = 0; i < n_planes; i++ )
+    {
+      cout << " plane " << i + 1 << "\t" << plane_coefficients[i] << endl;
+    }
+
   // the ground truth plane is the last
-  //cout << "ground truth plane " << plane_coefficients[n_planes - 1] << endl;
-  Vec3f normal (plane_coefficients[n_planes - 1].val[0], plane_coefficients[n_planes - 1].val[1], plane_coefficients[n_planes - 1].val[2] );
+  cout << "ground truth plane " << plane_coefficients[n_planes - 1] << endl;
+  Vec3f normal(plane_coefficients[n_planes - 1].val[0], plane_coefficients[n_planes - 1].val[1],
+               plane_coefficients[n_planes - 1].val[2]);
 
   float sum_x = 0;
   float sum_y = 0;
   float sum_z = 0;
   int cont = 0;
-  for(int i = 0; i < plane_mask.rows; i++)
-  {
-      for(int j = 0; j < plane_mask.cols; j++)
-      {
+  for( int i = 0; i < plane_mask.rows; i++ )
+    {
+      for( int j = 0; j < plane_mask.cols; j++ )
+        {
           uchar value = plane_mask.at<uchar>(i, j);
-          if (value == n_planes - 1)
-          {
+          if( value == n_planes - 1 )
+            {
               Vec3f intensity = pointcloud_tresh.at<Vec3f>(i, j);
               sum_x += intensity.val[0];
               sum_y += intensity.val[1];
               sum_z += intensity.val[2];
-              cont ++;
-          }
-      }
-  }
+              cont++;
+            }
+        }
+    }
 
   sum_x /= cont;
-  sum_y /= cont;;
+  sum_y /= cont;
   sum_z /= cont;
 
-  Vec3f m ( sum_x ,sum_y,sum_z);
-
+  Vec3f m(sum_x, sum_y, sum_z);
 
   Ptr<PlaneBase> plane = Ptr<PlaneBase>(new Plane(m, normal, n_planes - 1));
 
   float sum_d;
   int cont2 = 0;
-  for(int i = 0; i < thresholded_disp.rows; i++)
+  for( int i = 0; i < thresholded_disp.rows; i++ )
     {
-        for(int j = 0; j < thresholded_disp.cols; j++)
+      for( int j = 0; j < thresholded_disp.cols; j++ )
         {
-            uchar value = thresholded_disp.at<uchar>(i, j);
-            if (value != 0)
+          uchar value = thresholded_disp.at<uchar>(i, j);
+          if( value != 0 )
             {
-                Vec3f point = pointcloud_tresh.at<Vec3f>(i, j);
-                sum_d += plane->distance(point);
-                //cout << plane->distance(point) << endl;
-                cont2 ++;
+              Vec3f point = pointcloud_tresh.at<Vec3f>(i, j);
+              sum_d += plane->distance(point);
+              cont2++;
             }
         }
     }
@@ -327,17 +385,6 @@ void CV_PlaneTest::run(int)
   sum_d /= cont2;
 
   cout << "d " << sum_d << endl;
-
-  // Visualize the point cloud with viz
-  /* viz::Viz3d myWindow("show_cloud_with_color");
-   myWindow.setBackgroundMeshLab();
-   myWindow.showWidget("coosys", viz::WCoordinateSystem());
-   myWindow.showWidget("pointcloud", viz::WCloud(pointcloud_tresh / 1000, color_tresh));
-   myWindow.showWidget("text2d", viz::WText("Point cloud", Point(20, 20), 20, viz::Color::green()));
-   myWindow.spin();*/
-
-  cv::waitKey();
-
 }
 
 /****************************************************************************************\
@@ -349,4 +396,3 @@ TEST(GrayCodePattern, plane)
   CV_PlaneTest test;
   test.safe_run();
 }
-
