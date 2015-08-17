@@ -40,7 +40,6 @@
  //M*/
 
 #include "test_precomp.hpp"
-//#include "opencv2/opencv.hpp"
 #include <opencv2/rgbd.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
@@ -52,11 +51,11 @@ using namespace std;
 using namespace cv;
 
 const string STRUCTURED_LIGHT_DIR = "structured_light";
-const string FOLDER_DATA = "data";  // "scatola_";  //"data";
+const string FOLDER_DATA = "data";
 
 /****************************************************************************************\
-*           Plane test                 *
- \****************************************************************************************/
+*                                    Plane test                                          *
+\****************************************************************************************/
 class CV_PlaneTest : public cvtest::BaseTest
 {
  public:
@@ -202,15 +201,9 @@ class CV_PlaneTest : public cvtest::BaseTest
 
 };
 
-CV_PlaneTest::CV_PlaneTest()
-{
+CV_PlaneTest::CV_PlaneTest(){}
 
-}
-
-CV_PlaneTest::~CV_PlaneTest()
-{
-
-}
+CV_PlaneTest::~CV_PlaneTest(){}
 
 void CV_PlaneTest::run(int)
 {
@@ -252,14 +245,19 @@ void CV_PlaneTest::run(int)
   for( size_t i = 0; i < captured_pattern[1].size(); i++ )
     {
       ostringstream name1;
-
       name1 << "pattern_cam1_im" << i + 1 << ".png";
       captured_pattern[0][i] = imread(folder + name1.str(), 0);
-      remap(captured_pattern[0][i], captured_pattern[0][i], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
-
       ostringstream name2;
       name2 << "pattern_cam2_im" << i + 1 << ".png";
       captured_pattern[1][i] = imread(folder + name2.str(), 0);
+
+      if( (!captured_pattern[0][i].data) || (!captured_pattern[1][i].data) )
+        {
+          ts->set_failed_test_info(cvtest::TS::FAIL_INVALID_TEST_DATA);
+          return;
+        }
+
+      remap(captured_pattern[0][i], captured_pattern[0][i], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
       remap(captured_pattern[1][i], captured_pattern[1][i], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
 
     }
@@ -269,30 +267,30 @@ void CV_PlaneTest::run(int)
   // Set up GraycodePattern with params
   Ptr<structured_light::GrayCodePattern> graycode = structured_light::GrayCodePattern::create(params);
 
-  vector<Mat> darkImages;
-  vector<Mat> lightImages;
+  vector<Mat> blackImages;
+  vector<Mat> whiteImages;
 
-  darkImages.resize(2);
-  lightImages.resize(2);
+  blackImages.resize(2);
+  whiteImages.resize(2);
 
-  cvtColor(color, lightImages[0], COLOR_RGB2GRAY);
-  lightImages[1] = imread(folder + "pattern_cam2_im43.png", 0);
-  darkImages[0] = imread(folder + "pattern_cam1_im44.png", 0);
-  darkImages[1] = imread(folder + "pattern_cam2_im44.png", 0);
+  cvtColor(color, whiteImages[0], COLOR_RGB2GRAY);
+  whiteImages[1] = imread(folder + "pattern_cam2_im43.png", 0);
+  blackImages[0] = imread(folder + "pattern_cam1_im44.png", 0);
+  blackImages[1] = imread(folder + "pattern_cam2_im44.png", 0);
 
   remap(color, color, map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
 
-  remap(lightImages[0], lightImages[0], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
-  remap(lightImages[1], lightImages[1], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+  remap(whiteImages[0], whiteImages[0], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+  remap(whiteImages[1], whiteImages[1], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
 
-  remap(darkImages[0], darkImages[0], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
-  remap(darkImages[1], darkImages[1], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+  remap(blackImages[0], blackImages[0], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+  remap(blackImages[1], blackImages[1], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
 
-  graycode->setDarkThreshold(55);
-  graycode->setLightThreshold(10);
+  graycode->setBlackThreshold(55);
+  graycode->setWhiteThreshold(10);
 
   Mat disparityMap;
-  bool decoded = graycode->decode(captured_pattern, disparityMap, darkImages, lightImages,
+  bool decoded = graycode->decode(captured_pattern, disparityMap, blackImages, whiteImages,
                                   structured_light::DECODE_3D_UNDERWORLD);
   EXPECT_TRUE(decoded);
 
@@ -385,13 +383,15 @@ void CV_PlaneTest::run(int)
   sum_d /= cont2;
 
   cout << "d " << sum_d << endl;
+
+  EXPECT_LE(sum_d, 0.003);
 }
 
 /****************************************************************************************\
-*                                Tests registration                                     *
- \****************************************************************************************/
+*                                Test registration                                     *
+\****************************************************************************************/
 
-TEST(GrayCodePattern, plane)
+TEST(GrayCodePattern, plane_reconstruction)
 {
   CV_PlaneTest test;
   test.safe_run();

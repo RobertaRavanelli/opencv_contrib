@@ -50,40 +50,38 @@ namespace structured_light {
 //! @addtogroup structured_light
 //! @{
 
-//! type of the decoding algorithm
+//! Type of the decoding algorithm
+// other algorithms can be implemented
 enum
 {
   DECODE_3D_UNDERWORLD = 0  //!< K. Herakleous, C. Poullis. “3DUNDERWORLD-SLS: An Open-Source Structured-Light Scanning System for Rapid Geometry Acquisition”, ICT-TR-2014-01
-// other algorithms can be implemented
 };
 
-/** @brief Abstract base class for generating and decoding structured light pattern.
+/** @brief Abstract base class for generating and decoding structured light patterns.
  */
 class CV_EXPORTS_W StructuredLightPattern : public virtual Algorithm
 {
  public:
-  /** @brief Generates the structured light pattern.
+  /** @brief Generates the structured light pattern to project.
 
-   @param patternImages The generated pattern: a std::vector<cv::Mat>
-   @param darkColor The dark color of the pattern; default is black.
-   @param lightColor The light color of the pattern; default is white.
+   @param patternImages The generated pattern: a vector<Mat>.
    */
   CV_WRAP
-  virtual bool generate(OutputArrayOfArrays patternImages, const Scalar & darkColor = Scalar(0, 0, 0),
-                        const Scalar & lightColor = Scalar(255, 255, 255)) = 0;
+  virtual bool generate(OutputArrayOfArrays patternImages) = 0;
 
   /** @brief Decodes the structured light pattern, generating a disparity map
 
-   @param patternImages The acquired pattern images to decode, laded as grayscale and previously rectified.
-   @param disparityMap The decoding result: a disparity map.
-   @param darkImages The all-dark images needed for shadowMasks computation.
-   @param lightImages The all-light images needed for shadowMasks computation.
-   @param flags Flags setting decoding algorithms.
+   @param patternImages The acquired pattern images to decode (vector<vector<Mat>>), loaded as grayscale and previously rectified.
+   @param disparityMap The decoding result: a CV_64F Mat at image resolution, storing the computed disparity map.
+   @param blackImages The all-black images needed for shadowMasks computation.
+   @param whiteImages The all-white images needed for shadowMasks computation.
+   @param flags Flags setting decoding algorithms. Default: DECODE_3D_UNDERWORLD.
+   @note All the images must be at the same resolution.
    */
   CV_WRAP
-  virtual bool decode(InputArrayOfArrays patternImages, OutputArray disparityMap, InputArrayOfArrays darkImages =
+  virtual bool decode(InputArrayOfArrays patternImages, OutputArray disparityMap, InputArrayOfArrays blackImages =
                           noArray(),
-                      InputArrayOfArrays lightImages = noArray(), int flags = DECODE_3D_UNDERWORLD) const = 0;
+                      InputArrayOfArrays whiteImages = noArray(), int flags = DECODE_3D_UNDERWORLD) const = 0;
 };
 
 //! @}

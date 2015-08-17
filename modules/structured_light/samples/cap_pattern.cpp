@@ -55,7 +55,7 @@ static const char* keys =
 
 static void help()
 {
-  cout << "\nThis example shows how to use the \"Structured Light module\" to acquire a a pattern"
+  cout << "\nThis example shows how to use the \"Structured Light module\" to acquire a graycode pattern"
        "\nCall (with the two cams connected):\n"
        "./example_structured_light_cap_pattern <path> <proj_width> <proj_height> \n"
        << endl;

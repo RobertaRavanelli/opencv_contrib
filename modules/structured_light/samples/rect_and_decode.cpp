@@ -19,7 +19,7 @@ using namespace cv;
 int main()
 {
   std::string path = "/home/roberta/Sviluppo/DemoOpencv/";
-  cv::FileStorage fs(path + "30_07/calibrationParameters.yml", FileStorage::READ);
+  cv::FileStorage fs(path + "11_08/calibrationParameters.yml", FileStorage::READ);
   if( !fs.isOpened() )
     {
       std::cout << "Failed to open Calibration Data File. " << std::endl;
@@ -37,9 +37,9 @@ int main()
   fs["T"] >> T;
 
   cout << calib_camImageSize << endl;
-  ;
 
-  Mat color = cv::imread(path + "30_07/scatola/pattern_cam1_white.png");
+
+  Mat color = cv::imread(path + "11_08/bassa_risoluzione/pattern_cam1_white.png");
 
   Size FRimageSize = color.size();//(5184, 3456);  // full resolution cam image size
   double rap_w = (double) FRimageSize.width / calib_camImageSize.width;
@@ -83,28 +83,28 @@ int main()
 
 
 
-  for( int i = 0; i < captured_pattern[1].size(); i++ )
+  for( size_t i = 0; i < captured_pattern[1].size(); i++ )
     {
       std::ostringstream name1;
 
       //name1 << "30_07/MacGrande/pattern_cam1_im" << i + 1 << ".png";
-      name1 << "30_07/scatola/pattern_cam1_im" << i + 1 << ".png";
+      name1 << "11_08/bassa_risoluzione/pattern_cam1_im" << i + 1 << ".png";
       //name1 << "30_07/prova_scat_macbook/pattern_cam1_im" << i + 1 << ".png";
 
       cout << name1.str() << endl;
       captured_pattern[0][i] = cv::imread(path + name1.str(), 0);
       Mat tmp;
 
-      remap(captured_pattern[0][i], captured_pattern[0][i], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+      remap(captured_pattern[0][i], captured_pattern[0][i], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
 
       std::ostringstream name2;
 
       //name2 << "30_07/MacGrande/pattern_cam2_im" << i + 1 << ".png";
-      name2 << "30_07/scatola/pattern_cam2_im" << i + 1 << ".png";
+      name2 << "11_08/bassa_risoluzione/pattern_cam2_im" << i + 1 << ".png";
       //name2 << "30_07/prova_scat_macbook/pattern_cam2_im" << i + 1 << ".png";
 
       captured_pattern[1][i] = cv::imread(path + name2.str(), 0);
-      remap(captured_pattern[1][i], captured_pattern[1][i], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+      remap(captured_pattern[1][i], captured_pattern[1][i], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
       cout << name2.str() << endl;
 
       cv::resize(captured_pattern[0][i], tmp, Size(640,480));
@@ -142,11 +142,11 @@ int main()
    darkImages[1] = cv::imread(path + "30_07/MacGrande/pattern_cam2_black.png", 0);*/
 
 
-     lightImages[0] = cv::imread(path + "30_07/scatola/pattern_cam1_white.png", 0);
-     lightImages[1] = cv::imread(path + "30_07/scatola/pattern_cam2_white.png", 0);
+     lightImages[0] = cv::imread(path + "11_08/bassa_risoluzione/pattern_cam1_white.png", 0);
+     lightImages[1] = cv::imread(path + "11_08/bassa_risoluzione/pattern_cam2_white.png", 0);
 
-      darkImages[0] = cv::imread(path + "30_07/scatola/pattern_cam1_black.png", 0);
-      darkImages[1] = cv::imread(path + "30_07/scatola/pattern_cam2_black.png", 0);
+      darkImages[0] = cv::imread(path + "11_08/bassa_risoluzione/pattern_cam1_black.png", 0);
+      darkImages[1] = cv::imread(path + "11_08/bassa_risoluzione/pattern_cam2_black.png", 0);
 
   /*lightImages[0] = cv::imread(path + "30_07/prova_scat_macbook/pattern_cam1_white.png", 0);
   lightImages[1] = cv::imread(path + "30_07/prova_scat_macbook/pattern_cam2_white.png", 0);
@@ -158,28 +158,28 @@ int main()
   imwrite(path+"color.png", color);
   //cv::waitKey();
 
-  remap(lightImages[0], lightImages[0], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
-  remap(lightImages[1], lightImages[1], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+  remap(lightImages[0], lightImages[0], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+  remap(lightImages[1], lightImages[1], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
 
-  remap(darkImages[0], darkImages[0], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
-  remap(darkImages[1], darkImages[1], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+  remap(darkImages[0], darkImages[0], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+  remap(darkImages[1], darkImages[1], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
 
   //macbook grande
-  SL->setDarkThreshold(20);
-  SL->setLightThreshold(5);
+  SL->setBlackThreshold(20);
+  SL->setWhiteThreshold(5);
 
   /*SL->setDarkThreshold(8);
     SL->setLightThreshold(5);*/
-
+  Mat thresholded_disp;
   bool decoded = SL->decode(captured_pattern, disparityMap, darkImages, lightImages,
                             cv::structured_light::DECODE_3D_UNDERWORLD);
-  Mat thresholded_disp;
+if (decoded)
     {
       cout << "pattern decoded" << endl;
       // SAVING COMPUTED DISPARITY
-      cv::FileStorage fs(path + "/30_07/disparity.yml", FileStorage::WRITE);
-      fs << "disparity" << disparityMap;
-      fs.release();
+      cv::FileStorage fs1(path + "/11_08/disparity.yml", FileStorage::WRITE);
+      fs1 << "disparity" << disparityMap;
+      fs1.release();
       Mat tmp,cm_disp;
       double min;
       double max;
@@ -215,7 +215,7 @@ int main()
   Mat pointcloud;
   //
 
-  cv::FileStorage fs4(path + "30_07/Q.yml", FileStorage::WRITE);
+  cv::FileStorage fs4(path + "11_08/Q.yml", FileStorage::WRITE);
     fs4 << "Q" << Q;
     fs4.release();
   cout << "Q" << endl << Q << endl;
@@ -229,7 +229,7 @@ int main()
   // Saving the computed point cloud as a file (it can be opened in meshlab)
   ofstream myfile;
 
-  float Zmax = 0;
+  //float Zmax = 0;
   // http://choorucode.com/2011/08/18/ply-file-format/
   /*myfile.open("/home/roberta/Sviluppo/DemoOpencv/pointcloud.ply");
   myfile << "ply" << endl;

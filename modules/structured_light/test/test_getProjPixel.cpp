@@ -40,74 +40,61 @@
  //M*/
 
 #include "test_precomp.hpp"
-#include "opencv2/opencv.hpp"
 
 using namespace std;
 using namespace cv;
 
 /****************************************************************************************\
-*           Decoding test                 *
- \****************************************************************************************/
-class CV_DecodeTest : public cvtest::BaseTest
+*                              GetProjPixel test                                         *
+\****************************************************************************************/
+class CV_GetProjPixelTest : public cvtest::BaseTest
 {
  public:
-  CV_DecodeTest();
-  ~CV_DecodeTest();
+  CV_GetProjPixelTest();
+  ~CV_GetProjPixelTest();
  protected:
   void run(int);
-
 };
 
-void CV_DecodeTest::run(int)
-{
-  // Setup GraycodePattern parameters
-  structured_light::GrayCodePattern::Params params;
+CV_GetProjPixelTest::CV_GetProjPixelTest(){}
 
+CV_GetProjPixelTest::~CV_GetProjPixelTest(){}
+
+void CV_GetProjPixelTest::run(int)
+{
   // Using default projector resolution (1024 x 768)
   Ptr<structured_light::GrayCodePattern> graycode = structured_light::GrayCodePattern::create();
 
   // Storage for pattern
-  std::vector<Mat> pattern;
+  vector<Mat> pattern;
 
   // Using default pattern color (black and white)
   graycode->generate(pattern);
 
-  // Convert to gray because getProjPixel (and decode) want grayscale images as input
-  for( size_t i = 0; i < pattern.size(); i++ )
-    {
-      cvtColor(pattern[i], pattern[i], COLOR_RGB2GRAY);
-    }
-
   Point projPixel;
+
   size_t image_width = pattern[0].cols;
   size_t image_height = pattern[0].rows;
 
   for( size_t i = 0; i < image_width; i++ )
-    {
+  {
       for( size_t j = 0; j < image_height; j++ )
-        {
-          //for a (x,y) pixel of the camera returns the corresponding projector pixel by calculating the decimal number
+      {
+          //for a (x,y) pixel of the camera returns the corresponding projector pixel
           bool error = graycode->getProjPixel(pattern, i, j, projPixel);
-
           EXPECT_FALSE(error);
-
-          //cout << "i\t" << i << "\tj\t" << j << "\tp.x\t" << projPixel.x << "\tp.y\t" << projPixel.y << endl;
           EXPECT_EQ(projPixel.y, j);
           EXPECT_EQ(projPixel.x, i);
-        }
-    }
-
+      }
+  }
 }
 
-CV_DecodeTest::CV_DecodeTest()
-{
-}
-CV_DecodeTest::~CV_DecodeTest()
-{
-}
+/****************************************************************************************\
+*                                Test registration                                     *
+\****************************************************************************************/
 
 TEST(GrayCodePattern, getProjPixel)
 {
-  CV_DecodeTest test;
+  CV_GetProjPixelTest test;
   test.safe_run();
 }

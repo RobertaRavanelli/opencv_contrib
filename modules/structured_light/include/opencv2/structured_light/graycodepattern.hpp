@@ -57,14 +57,16 @@ class CV_EXPORTS_W GrayCodePattern : public StructuredLightPattern
  public:
 
   /** @brief Parameters of StructuredLightPattern constructor.
-   *  @param width Projector's width.
-   *  @param height Projector's height.
+   *  @param width Projector's width. Default value is 1024.
+   *  @param height Projector's height. Default value is 768.
    */
   struct CV_EXPORTS_W_SIMPLE Params
   {
     CV_WRAP
-    Params();CV_PROP_RW
-    int width;CV_PROP_RW
+    Params();
+    CV_PROP_RW
+    int width;
+    CV_PROP_RW
     int height;
   };
 
@@ -74,37 +76,37 @@ class CV_EXPORTS_W GrayCodePattern : public StructuredLightPattern
   CV_WRAP
   static Ptr<GrayCodePattern> create(const GrayCodePattern::Params &parameters = GrayCodePattern::Params());
 
-  /** @brief Sets the value for set the value for light threshold, needed for decoding.
+  /** @brief Sets the value for white threshold, needed for decoding.
 
-   @param value The desired light threshold value.
+   @param value The desired white threshold value.
    */
   CV_WRAP
-  virtual void setLightThreshold(size_t value) = 0;
+  virtual void setWhiteThreshold(size_t value) = 0;
 
-  /** @brief Sets the value for dark threshold, needed for decoding.
+  /** @brief Sets the value for black threshold, needed for decoding.
 
-   @param value The desired dark threshold value.
+   @param value The desired black threshold value.
    */
   CV_WRAP
-  virtual void setDarkThreshold(size_t value) = 0;
+  virtual void setBlackThreshold(size_t value) = 0;
 
-  /** @brief Generates The all-dark and all-light images needed for shadowMasks computation.
+  /** @brief Generates the all-black and all-white images needed for shadowMasks computation.
    *
-   *  @param darkImage The generated all-dark image.
-   *  @param lightImage The generated all-light image.
+   *  @param blackImage The generated all-black image.
+   *  @param whiteImage The generated all-white image.
    */
   CV_WRAP
-  virtual void getImagesForShadowMasks(InputOutputArray darkImage, InputOutputArray lightImage) const = 0;
+  virtual void getImagesForShadowMasks(InputOutputArray blackImage, InputOutputArray whiteImage) const = 0;
 
   /** @brief For a (x,y) pixel of the camera returns the corresponding projector pixel.
    *
-   *  @param patternImages The acquired pattern images.
+   *  @param patternImages The acquired pattern images, stored in a grayscale vector < Mat >.
    *  @param x x coordinate of the image pixel.
    *  @param y y coordinate of the image pixel.
-   *  @param p_out Projectors pixel corresponding to the camera's pixel.
+   *  @param projPix Projector's pixel corresponding to the camera's pixel.
    */
   CV_WRAP
-  virtual bool getProjPixel(InputArrayOfArrays patternImages, int x, int y, Point &p_out) const = 0;
+  virtual bool getProjPixel(InputArrayOfArrays patternImages, int x, int y, Point &projPix) const = 0;
 };
 
 //! @}
