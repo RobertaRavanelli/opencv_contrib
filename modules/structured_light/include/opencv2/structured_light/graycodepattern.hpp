@@ -77,33 +77,42 @@ class CV_EXPORTS_W GrayCodePattern : public StructuredLightPattern
   static Ptr<GrayCodePattern> create(const GrayCodePattern::Params &parameters = GrayCodePattern::Params());
 
   /** @brief Sets the value for white threshold, needed for decoding.
-
-   @param value The desired white threshold value.
+   *
+   *  White threshold is a number between 0-255 that represents the minimum brightness difference required for valid pixels, between the graycode pattern and its inverse images; used in getProjPixel method.
+   *
+   *  @param value The desired white threshold value.
+   *
    */
   CV_WRAP
   virtual void setWhiteThreshold(size_t value) = 0;
 
-  /** @brief Sets the value for black threshold, needed for decoding.
-
-   @param value The desired black threshold value.
+  /** @brief Sets the value for black threshold, needed for decoding (shadowsmasks computation).
+   *
+   *  Black threshold is a number between 0-255 that represents the minimum brightness difference required for valid pixels, between the fully illuminated (white) and the not illuminated images (black); used in computeShadowMasks method.
+   *
+   *  @param value The desired black threshold value.
+   *
    */
   CV_WRAP
   virtual void setBlackThreshold(size_t value) = 0;
 
   /** @brief Generates the all-black and all-white images needed for shadowMasks computation.
    *
-   *  @param blackImage The generated all-black image.
-   *  @param whiteImage The generated all-white image.
+   *  @param blackImage The generated all-black CV_8U image, at projector's resolution.
+   *  @param whiteImage The generated all-white CV_8U image, at projector's resolution.
    */
   CV_WRAP
   virtual void getImagesForShadowMasks(InputOutputArray blackImage, InputOutputArray whiteImage) const = 0;
 
-  /** @brief For a (x,y) pixel of the camera returns the corresponding projector pixel.
+  /** @brief For a (x,y) pixel of a camera returns the corresponding projector pixel.
    *
-   *  @param patternImages The acquired pattern images, stored in a grayscale vector < Mat >.
+   *  The function decodes each pixel in the pattern images acquired by a camera into their corresponding decimal numbers representing the projector's column and row,
+   *  providing a mapping between camera's and projector's pixel.
+   *
+   *  @param patternImages The pattern images acquired by the camera, stored in a grayscale vector < Mat >.
    *  @param x x coordinate of the image pixel.
    *  @param y y coordinate of the image pixel.
-   *  @param projPix Projector's pixel corresponding to the camera's pixel.
+   *  @param projPix Projector's pixel corresponding to the camera's pixel: projPix.x and projPix.y are the image coordinates of the projector’s pixel corresponding to the pixel being decoded in a camera.
    */
   CV_WRAP
   virtual bool getProjPixel(InputArrayOfArrays patternImages, int x, int y, Point &projPix) const = 0;

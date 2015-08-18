@@ -50,6 +50,17 @@
 
 /** @defgroup structured_light Structure Light API
 
- Structured Light Systems (SLS), formed by the combination of a projector with one or more cameras,
- are simple and effective tools to acquire 3D models.
+ Structured light is considered one of the most effective techniques to acquire 3D models.
+ This technique is based on projecting a light pattern and capturing the illuminated scene from one or more points of view.
+ Since the pattern is coded, correspondences between image points and points of the projected pattern can be easily found.
+ The decoded points can be triangulated and 3D information easily retrieved.
+
+ One of the most commonly exploited coding strategies is based on time-multiplexing. In this case, a set of patterns
+ are successively projected onto the measuring surface. The codeword for a given pixel is usually formed by
+ the sequence of illuminance values for that pixel across the projected patterns. Thus, the codification is called
+ temporal because the bits of the codewords are multiplexed in time @cite pattern .
+
+ In this module a time-multiplexing coding strategy based on gray code is implemented following the (stereo) approach
+ described  in 3DUNDERWORLD algorithm @cite UNDERWORLD
+
  */

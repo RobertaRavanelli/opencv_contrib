@@ -154,7 +154,7 @@ int main(int argc, char** argv)
   FileStorage fs(calib_file, FileStorage::READ);
   if( !fs.isOpened() )
     {
-      std::cout << "Failed to open Calibration Data File." << std::endl;
+      cout << "Failed to open Calibration Data File." << std::endl;
       help();
       return -1;
     }
@@ -168,6 +168,19 @@ int main(int argc, char** argv)
   fs["R"] >> R;
   fs["T"] >> T;
 
+  cout << "cam1intrinsics" << endl << cam1intrinsics << endl;
+  cout << "cam1distCoeffs" << endl << cam1distCoeffs << endl;
+  cout << "cam2intrinsics" << endl << cam2intrinsics << endl;
+  cout << "cam2distCoeffs" << endl << cam2distCoeffs << endl;
+  cout << "T" << endl << T << endl << "R" << endl << R << endl;
+
+  if( (!R.data) || (!T.data) || (!cam1intrinsics.data) || (!cam2intrinsics.data) || (!cam1distCoeffs.data) || (!cam2distCoeffs.data) )
+    {
+      cout << "Failed to load cameras calibration parameters" << endl;
+      help();
+      return -1;
+    }
+
   std::vector<std::vector<Mat> > captured_pattern;
   captured_pattern.resize(2);
   captured_pattern[0].resize(42);
@@ -175,12 +188,6 @@ int main(int argc, char** argv)
 
   Mat color = imread(imagelist[captured_pattern[0].size()]);
   Size imagesSize = color.size();
-
-  cout << "cam1intrinsics" << endl << cam1intrinsics << endl;
-  cout << "cam1distCoeffs" << endl << cam1distCoeffs << endl;
-  cout << "cam2intrinsics" << endl << cam2intrinsics << endl;
-  cout << "cam2distCoeffs" << endl << cam2distCoeffs << endl;
-  cout << "T" << endl << T << endl << "R" << endl << R << endl;
 
   // Stereo rectify
   cout << "Rectifying images..." << endl;
@@ -210,14 +217,6 @@ int main(int argc, char** argv)
       remap(captured_pattern[1][i], captured_pattern[1][i], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
       remap(captured_pattern[0][i], captured_pattern[0][i], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
 
-      /*Mat tmp;
-
-       resize(captured_pattern[0][i], tmp, Size(640,480));
-       imshow("cam1 (left) rect", tmp);
-
-       resize(captured_pattern[1][i], tmp, Size(640,480));
-       imshow("cam2 (right) rect",tmp);
-       waitKey();*/
     }
   cout << "done" << endl;
 

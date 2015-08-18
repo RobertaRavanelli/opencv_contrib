@@ -54,7 +54,7 @@ namespace structured_light {
 // other algorithms can be implemented
 enum
 {
-  DECODE_3D_UNDERWORLD = 0  //!< K. Herakleous, C. Poullis. “3DUNDERWORLD-SLS: An Open-Source Structured-Light Scanning System for Rapid Geometry Acquisition”, ICT-TR-2014-01
+  DECODE_3D_UNDERWORLD = 0  //!< Kyriakos Herakleous, Charalambos Poullis. “3DUNDERWORLD-SLS: An Open-Source Structured-Light Scanning System for Rapid Geometry Acquisition”, arXiv preprint arXiv:1406.6595 (2014).
 };
 
 /** @brief Abstract base class for generating and decoding structured light patterns.
@@ -64,7 +64,7 @@ class CV_EXPORTS_W StructuredLightPattern : public virtual Algorithm
  public:
   /** @brief Generates the structured light pattern to project.
 
-   @param patternImages The generated pattern: a vector<Mat>.
+   @param patternImages The generated pattern: a vector<Mat>, in which each image is a CV_8U Mat at projector's resolution.
    */
   CV_WRAP
   virtual bool generate(OutputArrayOfArrays patternImages) = 0;
