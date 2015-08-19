@@ -10,7 +10,7 @@
  //                           License Agreement
  //                For Open Source Computer Vision Library
  //
- // Copyright (C) 2013, OpenCV Foundation, all rights reserved.
+ // Copyright (C) 2015, OpenCV Foundation, all rights reserved.
  // Third party copyrights are property of their respective owners.
  //
  // Redistribution and use in source and binary forms, with or without modification,
@@ -72,42 +72,41 @@ static bool readStringList(const string& filename, vector<string>& l)
   l.resize(0);
   FileStorage fs(filename, FileStorage::READ);
   if( !fs.isOpened() )
-    {
-      cerr << "failed to open " << filename << endl;
-
-      return -1;
-    }
+  {
+    cerr << "failed to open " << filename << endl;
+    return -1;
+  }
   FileNode n = fs.getFirstTopLevelNode();
   if( n.type() != FileNode::SEQ )
-    {
-      cerr << "cam 1 images are not a sequence! FAIL" << endl;
-      return -1;
-    }
+  {
+    cerr << "cam 1 images are not a sequence! FAIL" << endl;
+    return -1;
+  }
 
   FileNodeIterator it = n.begin(), it_end = n.end();
   for( ; it != it_end; ++it )
-    {
-      l.push_back((string) *it);
-    }
+  {
+    l.push_back((string) *it);
+  }
 
   n = fs["cam2"];
   if( n.type() != FileNode::SEQ )
-    {
-      cerr << "cam 2 images are not a sequence! FAIL" << endl;
-      return -1;
-    }
+  {
+    cerr << "cam 2 images are not a sequence! FAIL" << endl;
+    return -1;
+  }
 
   it = n.begin(), it_end = n.end();
   for( ; it != it_end; ++it )
-    {
-      l.push_back((string) *it);
-    }
+  {
+    l.push_back((string) *it);
+  }
 
   if( l.size() % 2 != 0 )
-    {
-      cout << "Error: the image list contains odd (non-even) number of elements\n";
-      return -1;
-    }
+  {
+    cout << "Error: the image list contains odd (non-even) number of elements\n";
+    return -1;
+  }
   return true;
 }
 
@@ -122,10 +121,10 @@ int main(int argc, char** argv)
   params.height = parser.get<int>(3);
 
   if( images_file.empty() || calib_file.empty() || params.width < 1 || params.height < 1 || argc < 5 || argc > 7 )
-    {
-      help();
-      return -1;
-    }
+  {
+    help();
+    return -1;
+  }
 
   // Set up GraycodePattern with params
   Ptr<structured_light::GrayCodePattern> graycode = structured_light::GrayCodePattern::create(params);
@@ -133,31 +132,31 @@ int main(int argc, char** argv)
   size_t black_thresh = 0;
 
   if( argc == 7 )
-    {
-      // If passed, setting the white and black threshold, otherwise using default values
-      white_thresh = parser.get<size_t>(4);
-      black_thresh = parser.get<size_t>(5);
+  {
+    // If passed, setting the white and black threshold, otherwise using default values
+    white_thresh = parser.get<size_t>(4);
+    black_thresh = parser.get<size_t>(5);
 
-      graycode->setWhiteThreshold(white_thresh);
-      graycode->setBlackThreshold(black_thresh);
-    }
+    graycode->setWhiteThreshold(white_thresh);
+    graycode->setBlackThreshold(black_thresh);
+  }
 
   vector<string> imagelist;
   bool ok = readStringList(images_file, imagelist);
   if( !ok || imagelist.empty() )
-    {
-      cout << "can not open " << images_file << " or the string list is empty" << endl;
-      help();
-      return -1;
-    }
+  {
+    cout << "can not open " << images_file << " or the string list is empty" << endl;
+    help();
+    return -1;
+  }
 
   FileStorage fs(calib_file, FileStorage::READ);
   if( !fs.isOpened() )
-    {
-      cout << "Failed to open Calibration Data File." << std::endl;
-      help();
-      return -1;
-    }
+  {
+    cout << "Failed to open Calibration Data File." << std::endl;
+    help();
+    return -1;
+  }
 
   // Loading calibration parameters
   Mat cam1intrinsics, cam1distCoeffs, cam2intrinsics, cam2distCoeffs, R, T;
@@ -175,18 +174,19 @@ int main(int argc, char** argv)
   cout << "T" << endl << T << endl << "R" << endl << R << endl;
 
   if( (!R.data) || (!T.data) || (!cam1intrinsics.data) || (!cam2intrinsics.data) || (!cam1distCoeffs.data) || (!cam2distCoeffs.data) )
-    {
-      cout << "Failed to load cameras calibration parameters" << endl;
-      help();
-      return -1;
-    }
+  {
+    cout << "Failed to load cameras calibration parameters" << endl;
+    help();
+    return -1;
+  }
 
+  size_t numberOfPatternImages = graycode ->getNumberOfPatternImages();
   std::vector<std::vector<Mat> > captured_pattern;
   captured_pattern.resize(2);
-  captured_pattern[0].resize(42);
-  captured_pattern[1].resize(42);
+  captured_pattern[0].resize(numberOfPatternImages);
+  captured_pattern[1].resize(numberOfPatternImages);
 
-  Mat color = imread(imagelist[captured_pattern[0].size()]);
+  Mat color = imread(imagelist[numberOfPatternImages]);
   Size imagesSize = color.size();
 
   // Stereo rectify
@@ -201,23 +201,22 @@ int main(int argc, char** argv)
   initUndistortRectifyMap(cam2intrinsics, cam2distCoeffs, R2, P2, imagesSize, CV_32FC1, map2x, map2y);
 
   // Loading pattern images
-  for( size_t i = 0; i < captured_pattern[1].size(); i++ )
+  for( size_t i = 0; i < numberOfPatternImages; i++ )
+  {
+    captured_pattern[0][i] = imread(imagelist[i], 0);
+    captured_pattern[1][i] = imread(imagelist[i + numberOfPatternImages + 2], 0);
+
+    if( (!captured_pattern[0][i].data) || (!captured_pattern[1][i].data) )
     {
-
-      captured_pattern[0][i] = imread(imagelist[i], 0);
-      captured_pattern[1][i] = imread(imagelist[i + captured_pattern[1].size() + 2], 0);
-
-      if( (!captured_pattern[0][i].data) || (!captured_pattern[1][i].data) )
-        {
-          cout << "Empty images" << endl;
-          help();
-          return -1;
-        }
-
-      remap(captured_pattern[1][i], captured_pattern[1][i], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
-      remap(captured_pattern[0][i], captured_pattern[0][i], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
-
+       cout << "Empty images" << endl;
+       help();
+       return -1;
     }
+
+    remap(captured_pattern[1][i], captured_pattern[1][i], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+    remap(captured_pattern[0][i], captured_pattern[0][i], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+
+  }
   cout << "done" << endl;
 
   vector<Mat> blackImages;
@@ -229,9 +228,9 @@ int main(int argc, char** argv)
   // Loading images (all white + all black) needed for shadows computation
   cvtColor(color, whiteImages[0], COLOR_RGB2GRAY);
 
-  whiteImages[1] = imread(imagelist[2 * captured_pattern[1].size() + 2], 0);
-  blackImages[0] = imread(imagelist[captured_pattern[0].size() + 1], 0);
-  blackImages[1] = imread(imagelist[2 * captured_pattern[1].size() + 2 + 1], 0);
+  whiteImages[1] = imread(imagelist[2 *numberOfPatternImages + 2], 0);
+  blackImages[0] = imread(imagelist[numberOfPatternImages + 1], 0);
+  blackImages[1] = imread(imagelist[2 * numberOfPatternImages + 2 + 1], 0);
 
   remap(color, color, map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
 
@@ -246,7 +245,7 @@ int main(int argc, char** argv)
   bool decoded = graycode->decode(captured_pattern, disparityMap, blackImages, whiteImages,
                                   structured_light::DECODE_3D_UNDERWORLD);
   if( decoded )
-    {
+  {
       cout << endl << "pattern decoded" << endl;
 
       Mat cm_disp, scaledDisparityMap;
@@ -286,7 +285,7 @@ int main(int argc, char** argv)
       myWindow.showWidget("text2d", viz::WText("Point cloud", Point(20, 20), 20, viz::Color::green()));
       myWindow.spin();
 
-    }
+  }
 
   waitKey();
   return 0;

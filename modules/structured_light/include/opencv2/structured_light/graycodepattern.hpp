@@ -10,8 +10,7 @@
  //                           License Agreement
  //                For Open Source Computer Vision Library
  //
- // Copyright (C) 2000-2008, Intel Corporation, all rights reserved.
- // Copyright (C) 2009, Willow Garage Inc., all rights reserved.
+ // Copyright (C) 2015, OpenCV Foundation, all rights reserved.
  // Third party copyrights are property of their respective owners.
  //
  // Redistribution and use in source and binary forms, with or without modification,
@@ -50,7 +49,20 @@ namespace structured_light {
 //! @addtogroup structured_light
 //! @{
 
-/** @brief Class implementing the gray code pattern
+/** @brief Class implementing the Gray-code pattern, based on @cite UNDERWORLD.
+ *
+ *  The generation of the pattern images is performed with Gray encoding using the traditional white and black colors.
+ *
+ *  The information about the two image axes x, y is encoded separately into two different pattern sequences.
+ *  A projector P with resolution (P_res_x, P_res_y) will result in Ncols = log 2 (P_res_x) encoded pattern images representing the columns, and
+ *  in Nrows = log 2 (P_res_y) encoded pattern images representing the rows.
+ *  For example a projector with resolution 1024x768 will result in Ncols = 10 and Nrows = 10.
+
+ *  However, the generated pattern sequence consists of both regular color and color-inverted images: inverted pattern images are images
+ *  with the same structure as the original but with inverted colors.
+ *  This provides an effective method for easily determining the intensity value of each pixel when it is lit (highest value) and
+ *  when it is not lit (lowest value). So for a a projector with resolution 1024x768, the number of pattern images will be Ncols * 2 + Nrows * 2 = 40.
+ *
  */
 class CV_EXPORTS_W GrayCodePattern : public StructuredLightPattern
 {
@@ -76,6 +88,14 @@ class CV_EXPORTS_W GrayCodePattern : public StructuredLightPattern
   CV_WRAP
   static Ptr<GrayCodePattern> create(const GrayCodePattern::Params &parameters = GrayCodePattern::Params());
 
+  /** @brief Get the number of pattern images needed for the graycode pattern.
+   *
+   * @return The number of pattern images needed for the graycode pattern.
+   *
+   */
+   CV_WRAP
+   virtual size_t getNumberOfPatternImages() const = 0;
+
   /** @brief Sets the value for white threshold, needed for decoding.
    *
    *  White threshold is a number between 0-255 that represents the minimum brightness difference required for valid pixels, between the graycode pattern and its inverse images; used in getProjPixel method.
@@ -97,6 +117,10 @@ class CV_EXPORTS_W GrayCodePattern : public StructuredLightPattern
   virtual void setBlackThreshold(size_t value) = 0;
 
   /** @brief Generates the all-black and all-white images needed for shadowMasks computation.
+   *
+   *  To identify shadow regions, the regions of two images where the pixels are not lit by projector's light and thus where there is not coded information,
+   *  the 3DUNDERWORLD algorithm computes a shadow mask for the two cameras views, starting from a white and a black images captured by each camera.
+   *  This method generates these two additional images to project.
    *
    *  @param blackImage The generated all-black CV_8U image, at projector's resolution.
    *  @param whiteImage The generated all-white CV_8U image, at projector's resolution.

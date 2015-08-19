@@ -7,10 +7,10 @@
  //  copy or use the software.
  //
  //
- //                        Intel License Agreement
+ //                           License Agreement
  //                For Open Source Computer Vision Library
  //
- // Copyright (C) 2000, Intel Corporation, all rights reserved.
+ // Copyright (C) 2015, OpenCV Foundation, all rights reserved.
  // Third party copyrights are property of their respective owners.
  //
  // Redistribution and use in source and binary forms, with or without modification,
@@ -23,7 +23,7 @@
  //     this list of conditions and the following disclaimer in the documentation
  //     and/or other materials provided with the distribution.
  //
- //   * The name of Intel Corporation may not be used to endorse or promote products
+ //   * The name of the copyright holders may not be used to endorse or promote products
  //     derived from this software without specific prior written permission.
  //
  // This software is provided by the copyright holders and contributors "as is" and
@@ -55,7 +55,7 @@ const string FOLDER_DATA = "data";
 
 /****************************************************************************************\
 *                                    Plane test                                          *
-\****************************************************************************************/
+ \****************************************************************************************/
 class CV_PlaneTest : public cvtest::BaseTest
 {
  public:
@@ -63,7 +63,9 @@ class CV_PlaneTest : public cvtest::BaseTest
   ~CV_PlaneTest();
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
-  // From rgbd module
+  // From rgbd module: since I needed the distance method of plane class, I copied the class from rgb module
+  // it will be made a pull request to make Plane class public
+
   /** Structure defining a plane. The notations are from the second paper */
   class PlaneBase
   {
@@ -208,17 +210,24 @@ CV_PlaneTest::~CV_PlaneTest(){}
 void CV_PlaneTest::run(int)
 {
   string folder = cvtest::TS::ptr()->get_data_path() + "/" + STRUCTURED_LIGHT_DIR + "/" + FOLDER_DATA + "/";
+  structured_light::GrayCodePattern::Params params;
+  params.width = 1280;
+  params.height = 800;
+  // Set up GraycodePattern with params
+  Ptr<structured_light::GrayCodePattern> graycode = structured_light::GrayCodePattern::create(params);
+  size_t numberOfPatternImages = graycode->getNumberOfPatternImages();
+
   vector<vector<Mat> > captured_pattern;
   captured_pattern.resize(2);
-  captured_pattern[0].resize(42);
-  captured_pattern[1].resize(42);
+  captured_pattern[0].resize(numberOfPatternImages);
+  captured_pattern[1].resize(numberOfPatternImages);
 
   FileStorage fs(folder + "calibrationParameters.yml", FileStorage::READ);
   if( !fs.isOpened() )
-    {
-      ts->set_failed_test_info(cvtest::TS::FAIL_INVALID_TEST_DATA);
-      return;
-    }
+  {
+    ts->set_failed_test_info(cvtest::TS::FAIL_INVALID_TEST_DATA);
+    return;
+  }
 
   Mat cam1intrinsics, cam1distCoeffs, cam2intrinsics, cam2distCoeffs, R, T;
 
@@ -242,8 +251,8 @@ void CV_PlaneTest::run(int)
   initUndistortRectifyMap(cam1intrinsics, cam1distCoeffs, R1, P1, imagesSize, CV_32FC1, map1x, map1y);
   initUndistortRectifyMap(cam2intrinsics, cam2distCoeffs, R2, P2, imagesSize, CV_32FC1, map2x, map2y);
 
-  for( size_t i = 0; i < captured_pattern[1].size(); i++ )
-    {
+  for( size_t i = 0; i < numberOfPatternImages; i++ )
+  {
       ostringstream name1;
       name1 << "pattern_cam1_im" << i + 1 << ".png";
       captured_pattern[0][i] = imread(folder + name1.str(), 0);
@@ -252,20 +261,15 @@ void CV_PlaneTest::run(int)
       captured_pattern[1][i] = imread(folder + name2.str(), 0);
 
       if( (!captured_pattern[0][i].data) || (!captured_pattern[1][i].data) )
-        {
-          ts->set_failed_test_info(cvtest::TS::FAIL_INVALID_TEST_DATA);
-          return;
-        }
+      {
+        ts->set_failed_test_info(cvtest::TS::FAIL_INVALID_TEST_DATA);
+        return;
+      }
 
       remap(captured_pattern[0][i], captured_pattern[0][i], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
       remap(captured_pattern[1][i], captured_pattern[1][i], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
 
-    }
-  structured_light::GrayCodePattern::Params params;
-  params.width = 1280;
-  params.height = 800;
-  // Set up GraycodePattern with params
-  Ptr<structured_light::GrayCodePattern> graycode = structured_light::GrayCodePattern::create(params);
+  }
 
   vector<Mat> blackImages;
   vector<Mat> whiteImages;
@@ -325,14 +329,7 @@ void CV_PlaneTest::run(int)
 
   int n_planes = (int) plane_coefficients.size();
 
-  cout << n_planes << " identified planes" << endl << endl;
-  for( int i = 0; i < n_planes; i++ )
-    {
-      cout << " plane " << i + 1 << "\t" << plane_coefficients[i] << endl;
-    }
-
   // the ground truth plane is the last
-  cout << "ground truth plane " << plane_coefficients[n_planes - 1] << endl;
   Vec3f normal(plane_coefficients[n_planes - 1].val[0], plane_coefficients[n_planes - 1].val[1],
                plane_coefficients[n_planes - 1].val[2]);
 
@@ -341,20 +338,20 @@ void CV_PlaneTest::run(int)
   float sum_z = 0;
   int cont = 0;
   for( int i = 0; i < plane_mask.rows; i++ )
+  {
+    for( int j = 0; j < plane_mask.cols; j++ )
     {
-      for( int j = 0; j < plane_mask.cols; j++ )
-        {
-          uchar value = plane_mask.at<uchar>(i, j);
-          if( value == n_planes - 1 )
-            {
-              Vec3f intensity = pointcloud_tresh.at<Vec3f>(i, j);
-              sum_x += intensity.val[0];
-              sum_y += intensity.val[1];
-              sum_z += intensity.val[2];
-              cont++;
-            }
+       uchar value = plane_mask.at<uchar>(i, j);
+       if( value == n_planes - 1 )
+       {
+          Vec3f intensity = pointcloud_tresh.at<Vec3f>(i, j);
+          sum_x += intensity.val[0];
+          sum_y += intensity.val[1];
+          sum_z += intensity.val[2];
+          cont++;
         }
-    }
+     }
+  }
 
   sum_x /= cont;
   sum_y /= cont;
@@ -367,29 +364,28 @@ void CV_PlaneTest::run(int)
   float sum_d;
   int cont2 = 0;
   for( int i = 0; i < thresholded_disp.rows; i++ )
-    {
-      for( int j = 0; j < thresholded_disp.cols; j++ )
+  {
+     for( int j = 0; j < thresholded_disp.cols; j++ )
+     {
+        uchar value = thresholded_disp.at<uchar>(i, j);
+        if( value != 0 )
         {
-          uchar value = thresholded_disp.at<uchar>(i, j);
-          if( value != 0 )
-            {
-              Vec3f point = pointcloud_tresh.at<Vec3f>(i, j);
-              sum_d += plane->distance(point);
-              cont2++;
-            }
-        }
-    }
+           Vec3f point = pointcloud_tresh.at<Vec3f>(i, j);
+           sum_d += plane->distance(point);
+           cont2++;
+         }
+      }
+  }
 
   sum_d /= cont2;
 
-  cout << "d " << sum_d << endl;
-
+  // test pass if distance of points from ground truth plane is inferior to 3 mm
   EXPECT_LE(sum_d, 0.003);
 }
 
 /****************************************************************************************\
 *                                Test registration                                     *
-\****************************************************************************************/
+ \****************************************************************************************/
 
 TEST(GrayCodePattern, plane_reconstruction)
 {

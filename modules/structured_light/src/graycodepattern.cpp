@@ -60,6 +60,9 @@ class CV_EXPORTS_W GrayCodePattern_Impl : public GrayCodePattern
   bool decode(InputArrayOfArrays patternImages, OutputArray disparityMap, InputArrayOfArrays blackImages = noArray(),
               InputArrayOfArrays whiteImages = noArray(), int flags = DECODE_3D_UNDERWORLD) const;
 
+  // Returns the number of pattern images for the graycode pattern
+   size_t getNumberOfPatternImages() const;
+
   // Sets the value for black threshold
   void setBlackThreshold(size_t val);
 
@@ -314,6 +317,11 @@ void GrayCodePattern_Impl::computeNumberOfPatternImages()
   numOfColImgs = (size_t) ceil(log(double(params.width)) / log(2.0));
   numOfRowImgs = (size_t) ceil(log(double(params.height)) / log(2.0));
   numOfPatternImages = 2 * numOfColImgs + 2 * numOfRowImgs;
+}
+
+size_t GrayCodePattern_Impl::getNumberOfPatternImages() const
+{
+  return numOfPatternImages;
 }
 
 // Computes the shadows occlusion where we cannot reconstruct the model
