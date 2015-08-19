@@ -1,4 +1,4 @@
-Decode graycode pattern tuorial {#tutorial_decode_graycode_pattern}
+Decode graycode pattern tutorial {#tutorial_decode_graycode_pattern}
 =============
 
 Goal
@@ -18,7 +18,7 @@ Code
 Explanation
 -----------
 
-First of all we need to pass all the needed parameters to the program. The first is the name list of previously acquired pattern images, stored in a .yaml file organized as below:
+First of all the needed parameters must be passed to the program. The first is the name list of previously acquired pattern images, stored in a .yaml file organized as below:
 
 @code{.cpp}
 %YAML:1.0
@@ -38,9 +38,9 @@ cam2:
    - "/home/roberta/Sviluppo/DemoOpencv/14_08/data/pattern_cam2_im44.png"
 @endcode
 
-For example, the dataset I'm using has been acquired using a projector with a resolution of 1280x800, so I acquired 42 pattern images (from number 1 to 42) + 1 white (number 43) and 1 black (number 44) with both the two cameras.
+For example, the dataset used for this tutorial has been acquired using a projector with a resolution of 1280x800, so 42 pattern images (from number 1 to 42) + 1 white (number 43) and 1 black (number 44) were captured with both the two cameras.
 
-Then we need to pass the cameras calibration parameters, the width and the heigth of the projector used to project the pattern and, optionally, the value of white and black treshold.
+Then we need to pass the cameras calibration parameters, the width and the height of the projector used to project the pattern and, optionally, the value of white and black treshold.
 
 At this point, we can set up the *GrayCodePattern* class parameters with the width and the height of the projector used during the pattern acquisition and create a pointer to a GrayCodePattern object:
 
@@ -51,7 +51,7 @@ params.height = parser.get<int>(3);
 Ptr<structured_light::GrayCodePattern> graycode = structured_light::GrayCodePattern::create(params);
 @endcode
 
-If the white_threshold and black threshold are passed as parameters, we can set their values otherwise the algorithm will use the default values. The values of these thresholds influence the number of decoded pixels.
+If the white threshold and black threshold are passed as parameters, we can set their values otherwise the algorithm will use the default values. The values of these thresholds influence the number of decoded pixels.
 
 @code{.cpp}
 size_t white_thresh = 0;
@@ -67,22 +67,23 @@ if( argc == 7 )
 }
 @endcode
 
-In order to use the *decode* method of *GrayCodePattern* class, we need to store the acquired pattern images in a vector of vector of Mat.
+In order to use the *decode* method of *GrayCodePattern* class, the acquired pattern images must be stored in a vector of vector of Mat.
 The external vector has a size of two because two are the cameras: the first vector stores the pattern images captured from the left camera, the second those acquired from the right one. 
 
 @code{.cpp}
+size_t numberOfPatternImages = graycode ->getNumberOfPatternImages();
 std::vector<std::vector<Mat> > captured_pattern;
 captured_pattern.resize(2);
-captured_pattern[0].resize(42);
-captured_pattern[1].resize(42);
+captured_pattern[0].resize(numberOfPatternImages);
+captured_pattern[1].resize(numberOfPatternImages);
 
 .....
 
-for( size_t i = 0; i < captured_pattern[1].size(); i++ )
+for( size_t i = 0; i < numberOfPatternImages; i++ )
 {
 
     captured_pattern[0][i] = imread(imagelist[i], 0);
-    captured_pattern[1][i] = imread(imagelist[i + captured_pattern[1].size() + 2], 0);
+    captured_pattern[1][i] = imread(imagelist[i + numberOfPatternImages + 2], 0);
     ......
 }
 @endcode
@@ -97,14 +98,14 @@ whiteImages.resize(2);
 
 // Loading images (all white + all black) needed for shadows computation
 cvtColor(color, whiteImages[0], COLOR_RGB2GRAY);
-whiteImages[1] = imread(imagelist[2 * captured_pattern[1].size() + 2], 0);
-blackImages[0] = imread(imagelist[captured_pattern[0].size() + 1], 0);
-blackImages[1] = imread(imagelist[2 * captured_pattern[1].size() + 2 + 1], 0);
+whiteImages[1] = imread(imagelist[2 * numberOfPatternImages + 2], 0);
+blackImages[0] = imread(imagelist[numberOfPatternImages + 1], 0);
+blackImages[1] = imread(imagelist[2 * numberOfPatternImages + 2 + 1], 0);
 @endcode
 
 All the images must be loaded as grayscale images.
 
-Then we must rectify the images since the decode algorhitm wants rectified images as input. 
+Then the images must be rectified since the decode method wants rectified images as input. 
 
 @code{.cpp}
 // Stereo rectify
@@ -117,7 +118,7 @@ Mat map1x, map1y, map2x, map2y;
 initUndistortRectifyMap(cam1intrinsics, cam1distCoeffs, R1, P1, imagesSize, CV_32FC1, map1x, map1y);
 initUndistortRectifyMap(cam2intrinsics, cam2distCoeffs, R2, P2, imagesSize, CV_32FC1, map2x, map2y);
          ........
-for( size_t i = 0; i < captured_pattern[1].size(); i++ )
+for( size_t i = 0; i < numberOfPatternImages; i++ )
 {
          ........
   remap(captured_pattern[1][i], captured_pattern[1][i], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
@@ -139,7 +140,7 @@ bool decoded = graycode->decode(captured_pattern, disparityMap, blackImages, whi
                                   structured_light::DECODE_3D_UNDERWORLD);
 @endcode
 
-To better visualize the result, we apply a colormap to the computed disparity
+To better visualize the result, we apply a colormap to the computed disparity:
 @code{.cpp}
 Mat cm_disp, scaledDisparityMap;
 double min;
@@ -154,7 +155,7 @@ imshow("cm disparity m", cm_disp);
 
 ![](pics/cm_disparity.png)
 
-Then we compute a mask to remove background
+Then we compute a mask to remove the unwanted background:
 @code{.cpp}
 Mat dst, thresholded_disp;
 threshold(scaledDisparityMap, thresholded_disp, 0, 255, THRESH_OTSU + THRESH_BINARY);

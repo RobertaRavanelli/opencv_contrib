@@ -48,7 +48,7 @@ pattern.push_back(black);
 
 Thus, the final projection sequence is projected as follows: first the column and its inverted sequence, then the row and its inverted sequence and finally the white and black images.
 
-Once we have generated the pattern images, we must be sure to project them using the full screen option: the images must fill all the projection area, otherwise we are not exploiting projector resolution, a condition on which is based our implementation.
+Once we have generated the pattern images, we must be sure to project them using the full screen option: the images must fill all the projection area, otherwise we are not exploiting the projector full resolution, a condition on which is based our implementation.
 
 @code{.cpp}
 // Setting pattern window on second monitor (the projector's one) at full resolution
@@ -58,28 +58,33 @@ moveWindow("Pattern Window", params.width + 316, -20);
 setWindowProperty("Pattern Window", WND_PROP_FULLSCREEN, WINDOW_FULLSCREEN);
 @endcode
 
-At this point we are ready to capture the images with our digital cameras, using libgphoto2 library. 
+At this point we are ready to capture the images with our digital cameras, using libgphoto2 library, recently included in OpenCV: remember to turn on gPhoto2 option in Cmake.list when building OpenCV.
 @code{.cpp}
 // Open camera number 1
 VideoCapture cap1(CAP_GPHOTO2);
 if( !cap1.isOpened() )
-{  // check if cam1 opened
-   cout << "cam1 not opened!" << endl;
-   help();
-   return -1;
+{
+  // check if cam1 opened
+  cout << "cam1 not opened!" << endl;
+  help();
+  return -1;
 }
 // Open camera number 2
 VideoCapture cap2(1);
 if( !cap2.isOpened() )
-{  // check if cam2 opened
+{
+   // check if cam2 opened
    cout << "cam2 not opened!" << endl;
    help();
    return -1;
 }
 @endcode
 
-The two cameras must work at the same resolution and must have autofocus option disabled, maintaining the same focus during all acquisition. The projector can be positioned in the middle of the cameras.
-After having connected the cameras and the projector to the computer, we can launch cap_pattern demo giving as parameters the path where to save the images, and the projector's width and height.
+The two cameras must work at the same resolution and must have autofocus option disabled, maintaining the same focus during all acquisition. The projector can be positioned in the middle of the cameras. 
+
+However, before to proceed with pattern acquisition, we need to calibrate the cameras. Once the calibration is performed, there should be no movement of the cameras, otherwise a new calibration will be needed. 
+
+After having connected the cameras and the projector to the computer, we can launch cap_pattern demo giving as parameters the path where to save the images, and the projector's width and height and using the same focus and cameras settings used during calibration.
 
 To acquire the images with both cameras, the user can press any key.
 
@@ -95,7 +100,6 @@ Mat frame2;
 cap1 >> frame1;  // get a new frame from camera 1
 cap2 >> frame2;  // get a new frame from camera 2
 @endcode
-
 
 If the captured images are good (the user must take care that the projected pattern is viewed from the two cameras), the user can save them pressing the enter key, otherwise pressing any other key he can take another shot.
 @code{.cpp}
@@ -116,4 +120,4 @@ else{cout << "pattern cam1 and cam2 images number " << i + 1 << " NOT saved" << 
 }
 @endcode
 
-The acquistion ends when all the pattern images have been acquired with both cameras. Then the user must calibrate the cameras, using the same focus and settings used during the pattern acquisition.
+The acquistion ends when all the pattern images have been acquired with both cameras. Then the user can reconstruct the 3D model of the captured scene using the *decode* method of *GrayCodePattern* class (see next tutorial).
