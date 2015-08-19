@@ -10,7 +10,7 @@
  //                           License Agreement
  //                For Open Source Computer Vision Library
  //
- // Copyright (C) 2013, OpenCV Foundation, all rights reserved.
+ // Copyright (C) 2015, OpenCV Foundation, all rights reserved.
  // Third party copyrights are property of their respective owners.
  //
  // Redistribution and use in source and binary forms, with or without modification,
@@ -72,10 +72,10 @@ int main(int argc, char** argv)
   params.height = parser.get<int>(2);
 
   if( path.empty() || params.width < 1 || params.height < 1 )
-    {
-      help();
-      return -1;
-    }
+  {
+    help();
+    return -1;
+  }
 
   // Set up GraycodePattern with params
   Ptr<structured_light::GrayCodePattern> graycode = structured_light::GrayCodePattern::create(params);
@@ -102,21 +102,23 @@ int main(int argc, char** argv)
   VideoCapture cap1(CAP_GPHOTO2);
 
   if( !cap1.isOpened() )
-    {  // check if cam1 opened
-      cout << "cam1 not opened!" << endl;
-      help();
-      return -1;
-    }
+  {
+    // check if cam1 opened
+    cout << "cam1 not opened!" << endl;
+    help();
+    return -1;
+  }
 
   // Open camera number 2
   VideoCapture cap2(1);
 
   if( !cap2.isOpened() )
-    {  // check if cam2 opened
-      cout << "cam2 not opened!" << endl;
-      help();
-      return -1;
-    }
+  {
+     // check if cam2 opened
+     cout << "cam2 not opened!" << endl;
+     help();
+     return -1;
+  }
 
   cout << pattern.size() << " pattern images + 2 images for shadows mask computation to acquire with both cameras"
        << endl;
@@ -127,10 +129,10 @@ int main(int argc, char** argv)
 
   int i = 0;
   while( i < (int) pattern.size() )
-    {
+  {
       cout << "Waiting to save image number " << i + 1 << endl << "Press any key to acquire the photo" << endl;
       imshow("Pattern Window", pattern[i]);
-      //waitKey();
+
 
       Mat frame1;
       Mat frame2;
@@ -139,75 +141,75 @@ int main(int argc, char** argv)
       cap2 >> frame2;  // get a new frame from camera 2
 
       if( (frame1.data) && (frame2.data) )
-        {
+      {
 
-          Mat tmp;
-          cout << "cam 1 size: " << Size((int) cap1.get(CAP_PROP_FRAME_WIDTH), (int) cap1.get(CAP_PROP_FRAME_HEIGHT))
-               << endl;
+        Mat tmp;
+        cout << "cam 1 size: " << Size((int) cap1.get(CAP_PROP_FRAME_WIDTH), (int) cap1.get(CAP_PROP_FRAME_HEIGHT))
+             << endl;
 
-          cout << "cam 2 size: " << Size((int) cap2.get(CAP_PROP_FRAME_WIDTH), (int) cap2.get(CAP_PROP_FRAME_HEIGHT))
-               << endl;
+        cout << "cam 2 size: " << Size((int) cap2.get(CAP_PROP_FRAME_WIDTH), (int) cap2.get(CAP_PROP_FRAME_HEIGHT))
+             << endl;
 
-          cout << "zoom cam 1: " << cap1.get(CAP_PROP_ZOOM) << endl << "zoom cam 2: " << cap2.get(CAP_PROP_ZOOM)
-               << endl;
+        cout << "zoom cam 1: " << cap1.get(CAP_PROP_ZOOM) << endl << "zoom cam 2: " << cap2.get(CAP_PROP_ZOOM)
+             << endl;
 
-          cout << "focus cam 1: " << cap1.get(CAP_PROP_FOCUS) << endl << "focus cam 2: " << cap2.get(CAP_PROP_FOCUS)
-               << endl;
+        cout << "focus cam 1: " << cap1.get(CAP_PROP_FOCUS) << endl << "focus cam 2: " << cap2.get(CAP_PROP_FOCUS)
+             << endl;
 
-          cout << "Press enter to save the photo or an other key to re-acquire the photo" << endl;
+        cout << "Press enter to save the photo or an other key to re-acquire the photo" << endl;
 
-          namedWindow("cam1", WINDOW_NORMAL);
-          resizeWindow("cam1", 640, 480);
+        namedWindow("cam1", WINDOW_NORMAL);
+        resizeWindow("cam1", 640, 480);
 
-          namedWindow("cam2", WINDOW_NORMAL);
-          resizeWindow("cam2", 640, 480);
+        namedWindow("cam2", WINDOW_NORMAL);
+        resizeWindow("cam2", 640, 480);
 
-          // Moving window of cam2 to see the image at the same time with cam1
-          moveWindow("cam2", 640 + 75, 0);
+        // Moving window of cam2 to see the image at the same time with cam1
+        moveWindow("cam2", 640 + 75, 0);
 
-          // Resizing images to avoid issues for high resolution images, visualizing them as grayscale
-          resize(frame1, tmp, Size(640, 480));
-          cvtColor(tmp, tmp, COLOR_RGB2GRAY);
-          imshow("cam1", tmp);
-          resize(frame2, tmp, Size(640, 480));
-          cvtColor(tmp, tmp, COLOR_RGB2GRAY);
-          imshow("cam2", tmp);
+        // Resizing images to avoid issues for high resolution images, visualizing them as grayscale
+        resize(frame1, tmp, Size(640, 480));
+        cvtColor(tmp, tmp, COLOR_RGB2GRAY);
+        imshow("cam1", tmp);
+        resize(frame2, tmp, Size(640, 480));
+        cvtColor(tmp, tmp, COLOR_RGB2GRAY);
+        imshow("cam2", tmp);
 
-          bool save1 = false;
-          bool save2 = false;
+        bool save1 = false;
+        bool save2 = false;
 
-          int key = waitKey(0);
+        int key = waitKey(0);
 
           // Pressing enter, it saves the output
-          if( key == 13 )
+        if( key == 13 )
+        {
+            std::ostringstream name;
+            name << i + 1;
+
+            save1 = imwrite(path + "pattern_cam1_im" + name.str() + ".png", frame1);
+            save2 = imwrite(path + "pattern_cam2_im" + name.str() + ".png", frame2);
+
+            if( (save1) && (save2) )
             {
-              std::ostringstream name;
-              name << i + 1;
+                cout << "pattern cam1 and cam2 images number " << i + 1 << " saved" << endl << endl;
+                i++;
 
-              save1 = imwrite(path + "pattern_cam1_im" + name.str() + ".png", frame1);
-              save2 = imwrite(path + "pattern_cam2_im" + name.str() + ".png", frame2);
+             }
+             else{cout << "pattern cam1 and cam2 images number " << i + 1 << " NOT saved" << endl << endl << "Retry, check the path"<< endl << endl;}
 
-              if( (save1) && (save2) )
-                {
-                  cout << "pattern cam1 and cam2 images number " << i + 1 << " saved" << endl << endl;
-                  i++;
-
-                }
-              else{cout << "pattern cam1 and cam2 images number " << i + 1 << " NOT saved" << endl << endl << "Retry, check the path"<< endl << endl;}
-
-            }
+          }
           // Pressing escape, the program closes
           if( key == 27 )
             {
               cout << "Closing program" << endl;
             }
-        } else
-        {
-          cout << "no frame data, waiting for new frame" << endl;
-        }
+      } else
+      {
+        cout << "no frame data, waiting for new frame" << endl;
+      }
 
-    }
+  }
 
-// the camera will be deinitialized automatically in VideoCapture destructor
+  // the camera will be deinitialized automatically in VideoCapture destructor
   return 0;
 }
