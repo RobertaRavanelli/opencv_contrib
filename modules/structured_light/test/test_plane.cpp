@@ -217,22 +217,27 @@ void CV_PlaneTest::run(int)
   Ptr<structured_light::GrayCodePattern> graycode = structured_light::GrayCodePattern::create(params);
   size_t numberOfPatternImages = graycode->getNumberOfPatternImages();
 
-  vector<vector<Mat> > captured_pattern;
-  captured_pattern.resize(2);
-  captured_pattern[0].resize(numberOfPatternImages);
-  captured_pattern[1].resize(numberOfPatternImages);
 
   FileStorage fs(folder + "calibrationParameters.yml", FileStorage::READ);
   if( !fs.isOpened() )
   {
     ts->set_failed_test_info(cvtest::TS::FAIL_INVALID_TEST_DATA);
-    return;
   }
 
-  Mat cam1intrinsics, cam1distCoeffs, cam2intrinsics, cam2distCoeffs, R, T;
+  FileStorage fs2(folder + "gt_plane.yml", FileStorage::READ);
+  if( !fs.isOpened() )
+  {
+    ts->set_failed_test_info(cvtest::TS::FAIL_INVALID_TEST_DATA);
+  }
 
-  Mat color = imread(folder + "pattern_cam1_im43.png");
-  Size imagesSize = color.size();
+  // Loading ground truth plane parameters
+  Vec4f plane_coefficients;
+  Vec3f m;
+  fs2["plane_coefficients"] >> plane_coefficients;
+  fs2["m"] >> m;
+
+  // Loading calibration parameters
+  Mat cam1intrinsics, cam1distCoeffs, cam2intrinsics, cam2distCoeffs, R, T;
 
   fs["cam1_intrinsics"] >> cam1intrinsics;
   fs["cam2_intrinsics"] >> cam2intrinsics;
@@ -241,7 +246,28 @@ void CV_PlaneTest::run(int)
   fs["R"] >> R;
   fs["T"] >> T;
 
-  // Stereo rectify
+  // Loading white and black images
+  vector<Mat> blackImages;
+  vector<Mat> whiteImages;
+
+  blackImages.resize(2);
+  whiteImages.resize(2);
+
+  whiteImages[0] = imread(folder + "pattern_cam1_im43.png", 0);
+  whiteImages[1] = imread(folder + "pattern_cam2_im43.png", 0);
+  blackImages[0] = imread(folder + "pattern_cam1_im44.png", 0);
+  blackImages[1] = imread(folder + "pattern_cam2_im44.png", 0);
+
+  Size imagesSize = whiteImages[0].size();
+
+  if( (!cam1intrinsics.data) || (!cam2intrinsics.data) || (!cam1distCoeffs.data) || (!cam2distCoeffs.data) || (!R.data)
+      || (!T.data) || (!whiteImages[0].data) || (!whiteImages[1].data) || (!blackImages[0].data)
+      || (!blackImages[1].data) )
+  {
+     ts->set_failed_test_info(cvtest::TS::FAIL_INVALID_TEST_DATA);
+  }
+
+  // Computing stereo rectify parameters
   Mat R1, R2, P1, P2, Q;
   Rect validRoi[2];
   stereoRectify(cam1intrinsics, cam1distCoeffs, cam2intrinsics, cam2distCoeffs, imagesSize, R, T, R1, R2, P1, P2, Q, 0,
@@ -251,6 +277,12 @@ void CV_PlaneTest::run(int)
   initUndistortRectifyMap(cam1intrinsics, cam1distCoeffs, R1, P1, imagesSize, CV_32FC1, map1x, map1y);
   initUndistortRectifyMap(cam2intrinsics, cam2distCoeffs, R2, P2, imagesSize, CV_32FC1, map2x, map2y);
 
+  vector<vector<Mat> > captured_pattern;
+  captured_pattern.resize(2);
+  captured_pattern[0].resize(numberOfPatternImages);
+  captured_pattern[1].resize(numberOfPatternImages);
+
+  // Loading and rectifying pattern images
   for( size_t i = 0; i < numberOfPatternImages; i++ )
   {
       ostringstream name1;
@@ -263,7 +295,6 @@ void CV_PlaneTest::run(int)
       if( (!captured_pattern[0][i].data) || (!captured_pattern[1][i].data) )
       {
         ts->set_failed_test_info(cvtest::TS::FAIL_INVALID_TEST_DATA);
-        return;
       }
 
       remap(captured_pattern[0][i], captured_pattern[0][i], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
@@ -271,42 +302,22 @@ void CV_PlaneTest::run(int)
 
   }
 
-  vector<Mat> blackImages;
-  vector<Mat> whiteImages;
-
-  blackImages.resize(2);
-  whiteImages.resize(2);
-
-  cvtColor(color, whiteImages[0], COLOR_RGB2GRAY);
-  whiteImages[1] = imread(folder + "pattern_cam2_im43.png", 0);
-  blackImages[0] = imread(folder + "pattern_cam1_im44.png", 0);
-  blackImages[1] = imread(folder + "pattern_cam2_im44.png", 0);
-
-  remap(color, color, map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
-
+  // Rectifying white and black images
   remap(whiteImages[0], whiteImages[0], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
   remap(whiteImages[1], whiteImages[1], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
 
   remap(blackImages[0], blackImages[0], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
   remap(blackImages[1], blackImages[1], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
 
+  // Setting up threshold parameters to reconstruct only the plane in foreground
   graycode->setBlackThreshold(55);
   graycode->setWhiteThreshold(10);
 
+  // Computing the disparity map
   Mat disparityMap;
   bool decoded = graycode->decode(captured_pattern, disparityMap, blackImages, whiteImages,
                                   structured_light::DECODE_3D_UNDERWORLD);
   EXPECT_TRUE(decoded);
-
-  Mat cm_disp, scaledDisparityMap;
-  double min;
-  double max;
-  minMaxIdx(disparityMap, &min, &max);
-  convertScaleAbs(disparityMap, scaledDisparityMap, 255 / (max - min));
-
-  // Computing the mask to remove background
-  Mat thresholded_disp, dst;
-  threshold(scaledDisparityMap, thresholded_disp, 0, 255, THRESH_OTSU + THRESH_BINARY);
 
   // Computing the point cloud
   Mat pointcloud;
@@ -315,71 +326,30 @@ void CV_PlaneTest::run(int)
   // from mm (unit of calibration) to m
   pointcloud = pointcloud / 1000;
 
-  // Apply the mask
-  Mat pointcloud_tresh, color_tresh;
-  pointcloud.copyTo(pointcloud_tresh, thresholded_disp);
-  color.copyTo(color_tresh, thresholded_disp);
+  // Setting up plane with ground truth plane values
+  Vec3f normal(plane_coefficients.val[0], plane_coefficients.val[1], plane_coefficients.val[2]);
+  Ptr<PlaneBase> plane = Ptr<PlaneBase>(new Plane(m, normal, 0));
 
-  Mat plane_mask, tmp;
-  vector<Vec4f> plane_coefficients;
-  rgbd::RgbdPlane plane_computer;
-  plane_computer.setThreshold(0.01);
-  plane_computer.setMinSize(610500);
-  plane_computer(pointcloud_tresh, plane_mask, plane_coefficients);
-
-  int n_planes = (int) plane_coefficients.size();
-
-  // the ground truth plane is the last
-  Vec3f normal(plane_coefficients[n_planes - 1].val[0], plane_coefficients[n_planes - 1].val[1],
-               plane_coefficients[n_planes - 1].val[2]);
-
-  float sum_x = 0;
-  float sum_y = 0;
-  float sum_z = 0;
+  // Computing the distance of every point of the pointcloud from ground truth plane
+  float sum_d = 0;
   int cont = 0;
-  for( int i = 0; i < plane_mask.rows; i++ )
+  for( int i = 0; i < disparityMap.rows; i++ )
   {
-    for( int j = 0; j < plane_mask.cols; j++ )
-    {
-       uchar value = plane_mask.at<uchar>(i, j);
-       if( value == n_planes - 1 )
-       {
-          Vec3f intensity = pointcloud_tresh.at<Vec3f>(i, j);
-          sum_x += intensity.val[0];
-          sum_y += intensity.val[1];
-          sum_z += intensity.val[2];
-          cont++;
-        }
-     }
-  }
-
-  sum_x /= cont;
-  sum_y /= cont;
-  sum_z /= cont;
-
-  Vec3f m(sum_x, sum_y, sum_z);
-
-  Ptr<PlaneBase> plane = Ptr<PlaneBase>(new Plane(m, normal, n_planes - 1));
-
-  float sum_d;
-  int cont2 = 0;
-  for( int i = 0; i < thresholded_disp.rows; i++ )
-  {
-     for( int j = 0; j < thresholded_disp.cols; j++ )
+     for( int j = 0; j < disparityMap.cols; j++ )
      {
-        uchar value = thresholded_disp.at<uchar>(i, j);
+        float value = disparityMap.at<float>(i, j);
         if( value != 0 )
         {
-           Vec3f point = pointcloud_tresh.at<Vec3f>(i, j);
+           Vec3f point = pointcloud.at<Vec3f>(i, j);
            sum_d += plane->distance(point);
-           cont2++;
-         }
+           cont++;
+        }
       }
-  }
+   }
 
-  sum_d /= cont2;
+  sum_d /= cont;
 
-  // test pass if distance of points from ground truth plane is inferior to 3 mm
+  // test pass if the mean of points distance from ground truth plane is inferior to 3 mm
   EXPECT_LE(sum_d, 0.003);
 }
 
