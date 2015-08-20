@@ -10,7 +10,7 @@ In this tutorial you will learn how to use the *GrayCodePattern* class to:
 -   Project the graycode pattern.
 -   Capture the projected graycode pattern.
 
-It is important to underline that *GrayCodePattern* class actually implements the 3DUNDERWORLD algorhithm described in @cite UNDERWORLD , which is based on a stereo approach: we need to capture the projected pattern at the same time from two different views if we want to reconstruct the 3D model of the scanned object. Thus, an acquisition set consists of the images captured by each camera for each image in the pattern sequence.
+It is important to underline that *GrayCodePattern* class actually implements the 3DUNDERWORLD algorithm described in @cite UNDERWORLD , which is based on a stereo approach: we need to capture the projected pattern at the same time from two different views if we want to reconstruct the 3D model of the scanned object. Thus, an acquisition set consists of the images captured by each camera for each image in the pattern sequence.
 
 Code
 ----
@@ -19,7 +19,7 @@ Code
 
 Explanation
 -----------
-First of all we need to generate the pattern images to project. Since the number of images is a function of the projector's resolution, we have to set *GrayCodePattern* class parameters with our projector's width and height before to istantiate the class. At this point we can call the *generate* method, which fills a vector of Mat with the pattern images:
+First of all the pattern images to project must be generated. Since the number of images is a function of the projector's resolution, *GrayCodePattern* class parameters must be set with our projector's width and height. In this way the *generate* method can be called: it fills a vector of Mat with the computed pattern images:
 
 @code{.cpp}
 structured_light::GrayCodePattern::Params params;
@@ -33,9 +33,9 @@ std::vector<Mat> pattern;
 graycode->generate(pattern);
 @endcode
 
-For example, using the default projector resolution (1024 x 768), we have to project 40 images: 20 for regular color pattern (10 images for the columns sequence and 10 for the rows one) and 20 color-inverted pattern, where the inverted pattern images are images with the same structure as the original but with inverted colors. This provides an effective method for easily determining the intensity value of each pixel when it is lit (highest value) and when it is not lit (lowest value).
+For example, using the default projector resolution (1024 x 768), 40 images have to be projected: 20 for regular color pattern (10 images for the columns sequence and 10 for the rows one) and 20 for the color-inverted pattern, where the inverted pattern images are images with the same structure as the original but with inverted colors. This provides an effective method for easily determining the intensity value of each pixel when it is lit (highest value) and when it is not lit (lowest value) during the decoding step.
 
-Subsequently, to identify shadow regions, the regions of two images where the pixels are not lit by projector's light and thus where there is not code information, the 3DUNDERWORLD algorithm computes a shadow mask for the two cameras views, starting from a white and a black images captured by each camera. So we need to project two additional images:
+Subsequently, to identify shadow regions, the regions of two images where the pixels are not lit by projector's light and thus where there is not code information, the 3DUNDERWORLD algorithm computes a shadow mask for the two cameras views, starting from a white and a black images captured by each camera. So two additional images need to be projected and captured with both cameras:
 
 @code{.cpp}
 // Generate the all-white and all-black images needed for shadows mask computation
@@ -48,7 +48,7 @@ pattern.push_back(black);
 
 Thus, the final projection sequence is projected as follows: first the column and its inverted sequence, then the row and its inverted sequence and finally the white and black images.
 
-Once we have generated the pattern images, we must be sure to project them using the full screen option: the images must fill all the projection area, otherwise we are not exploiting the projector full resolution, a condition on which is based our implementation.
+Once the pattern images have been generated, they must be projected using the full screen option: the images must fill all the projection area, otherwise the projector full resolution is not exploited, a condition on which is based 3DUNDERWORLD implementation.
 
 @code{.cpp}
 // Setting pattern window on second monitor (the projector's one) at full resolution
@@ -58,7 +58,7 @@ moveWindow("Pattern Window", params.width + 316, -20);
 setWindowProperty("Pattern Window", WND_PROP_FULLSCREEN, WINDOW_FULLSCREEN);
 @endcode
 
-At this point we are ready to capture the images with our digital cameras, using libgphoto2 library, recently included in OpenCV: remember to turn on gPhoto2 option in Cmake.list when building OpenCV.
+At this point the images can be captured with our digital cameras, using libgphoto2 library, recently included in OpenCV: remember to turn on gPhoto2 option in Cmake.list when building OpenCV.
 @code{.cpp}
 // Open camera number 1
 VideoCapture cap1(CAP_GPHOTO2);
@@ -82,11 +82,11 @@ if( !cap2.isOpened() )
 
 The two cameras must work at the same resolution and must have autofocus option disabled, maintaining the same focus during all acquisition. The projector can be positioned in the middle of the cameras. 
 
-However, before to proceed with pattern acquisition, we need to calibrate the cameras. Once the calibration is performed, there should be no movement of the cameras, otherwise a new calibration will be needed. 
+However, before to proceed with pattern acquisition, the cameras must be calibrated. Once the calibration is performed, there should be no movement of the cameras, otherwise a new calibration will be needed. 
 
-After having connected the cameras and the projector to the computer, we can launch cap_pattern demo giving as parameters the path where to save the images, and the projector's width and height and using the same focus and cameras settings used during calibration.
+After having connected the cameras and the projector to the computer, cap_pattern demo can be launched giving as parameters the path where to save the images, and the projector's width and height, taking care to use the same focus and cameras settings of calibration.
 
-To acquire the images with both cameras, the user can press any key.
+At this point, to acquire the images with both cameras, the user can press any key.
 
 @code{.cpp}
 // Turning off autofocus
@@ -120,4 +120,4 @@ else{cout << "pattern cam1 and cam2 images number " << i + 1 << " NOT saved" << 
 }
 @endcode
 
-The acquistion ends when all the pattern images have been acquired with both cameras. Then the user can reconstruct the 3D model of the captured scene using the *decode* method of *GrayCodePattern* class (see next tutorial).
+The acquistion ends when all the pattern images have saved for both cameras. Then the user can reconstruct the 3D model of the captured scene using the *decode* method of *GrayCodePattern* class (see next tutorial).
