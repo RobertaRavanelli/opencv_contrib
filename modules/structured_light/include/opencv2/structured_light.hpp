@@ -7,12 +7,10 @@
  //  copy or use the software.
  //
  //
- //                          License Agreement
+ //                           License Agreement
  //                For Open Source Computer Vision Library
  //
- // Copyright (C) 2000-2008, Intel Corporation, all rights reserved.
- // Copyright (C) 2009, Willow Garage Inc., all rights reserved.
- // Copyright (C) 2013, OpenCV Foundation, all rights reserved.
+ // Copyright (C) 2015, OpenCV Foundation, all rights reserved.
  // Third party copyrights are property of their respective owners.
  //
  // Redistribution and use in source and binary forms, with or without modification,
@@ -51,16 +49,19 @@
 /** @defgroup structured_light Structure Light API
 
  Structured light is considered one of the most effective techniques to acquire 3D models.
- This technique is based on projecting a light pattern and capturing the illuminated scene from one or more points of view.
- Since the pattern is coded, correspondences between image points and points of the projected pattern can be easily found.
- The decoded points can be triangulated and 3D information easily retrieved.
+ This technique is based on projecting a light pattern and capturing the illuminated scene
+ from one or more points of view. Since the pattern is coded, correspondences between image
+ points and points of the projected pattern can be quickly found and 3D information easily
+ retrieved.
 
- One of the most commonly exploited coding strategies is based on time-multiplexing. In this case, a set of patterns
- are successively projected onto the measuring surface. The codeword for a given pixel is usually formed by
- the sequence of illuminance values for that pixel across the projected patterns. Thus, the codification is called
- temporal because the bits of the codewords are multiplexed in time @cite pattern .
+ One of the most commonly exploited coding strategies is based on trmatime-multiplexing. In this
+ case, a set of patterns  are successively projected onto the measuring surface.
+ The codeword for a given pixel is usually formed by  the sequence of illuminance values for that
+ pixel across the projected patterns. Thus, the codification is called  temporal because the bits
+ of the codewords are multiplexed in time @cite pattern .
 
- In this module a time-multiplexing coding strategy based on gray code is implemented following the (stereo) approach
- described  in 3DUNDERWORLD algorithm @cite UNDERWORLD
+ In this module a time-multiplexing coding strategy based on Gray encoding is implemented following the
+ (stereo) approach described in 3DUNDERWORLD algorithm @cite UNDERWORLD .
+ For more details, see @ref tutorial_structured_light.
 
  */

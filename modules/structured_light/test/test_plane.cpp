@@ -199,7 +199,7 @@ class CV_PlaneTest : public cvtest::BaseTest
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
  protected:
-  void run(int);
+  void run( int );
 
 };
 
@@ -207,27 +207,27 @@ CV_PlaneTest::CV_PlaneTest(){}
 
 CV_PlaneTest::~CV_PlaneTest(){}
 
-void CV_PlaneTest::run(int)
+void CV_PlaneTest::run( int )
 {
   string folder = cvtest::TS::ptr()->get_data_path() + "/" + STRUCTURED_LIGHT_DIR + "/" + FOLDER_DATA + "/";
   structured_light::GrayCodePattern::Params params;
   params.width = 1280;
   params.height = 800;
   // Set up GraycodePattern with params
-  Ptr<structured_light::GrayCodePattern> graycode = structured_light::GrayCodePattern::create(params);
+  Ptr<structured_light::GrayCodePattern> graycode = structured_light::GrayCodePattern::create( params );
   size_t numberOfPatternImages = graycode->getNumberOfPatternImages();
 
 
-  FileStorage fs(folder + "calibrationParameters.yml", FileStorage::READ);
+  FileStorage fs( folder + "calibrationParameters.yml", FileStorage::READ );
   if( !fs.isOpened() )
   {
-    ts->set_failed_test_info(cvtest::TS::FAIL_INVALID_TEST_DATA);
+    ts->set_failed_test_info( cvtest::TS::FAIL_INVALID_TEST_DATA );
   }
 
-  FileStorage fs2(folder + "gt_plane.yml", FileStorage::READ);
+  FileStorage fs2( folder + "gt_plane.yml", FileStorage::READ );
   if( !fs.isOpened() )
   {
-    ts->set_failed_test_info(cvtest::TS::FAIL_INVALID_TEST_DATA);
+    ts->set_failed_test_info( cvtest::TS::FAIL_INVALID_TEST_DATA );
   }
 
   // Loading ground truth plane parameters
@@ -250,114 +250,114 @@ void CV_PlaneTest::run(int)
   vector<Mat> blackImages;
   vector<Mat> whiteImages;
 
-  blackImages.resize(2);
-  whiteImages.resize(2);
+  blackImages.resize( 2 );
+  whiteImages.resize( 2 );
 
-  whiteImages[0] = imread(folder + "pattern_cam1_im43.png", 0);
-  whiteImages[1] = imread(folder + "pattern_cam2_im43.png", 0);
-  blackImages[0] = imread(folder + "pattern_cam1_im44.png", 0);
-  blackImages[1] = imread(folder + "pattern_cam2_im44.png", 0);
+  whiteImages[0] = imread( folder + "pattern_cam1_im43.png", 0 );
+  whiteImages[1] = imread( folder + "pattern_cam2_im43.png", 0 );
+  blackImages[0] = imread( folder + "pattern_cam1_im44.png", 0 );
+  blackImages[1] = imread( folder + "pattern_cam2_im44.png", 0 );
 
   Size imagesSize = whiteImages[0].size();
 
-  if( (!cam1intrinsics.data) || (!cam2intrinsics.data) || (!cam1distCoeffs.data) || (!cam2distCoeffs.data) || (!R.data)
-      || (!T.data) || (!whiteImages[0].data) || (!whiteImages[1].data) || (!blackImages[0].data)
-      || (!blackImages[1].data) )
+  if( ( !cam1intrinsics.data ) || ( !cam2intrinsics.data ) || ( !cam1distCoeffs.data ) || ( !cam2distCoeffs.data ) || ( !R.data )
+      || ( !T.data ) || ( !whiteImages[0].data ) || ( !whiteImages[1].data ) || ( !blackImages[0].data )
+      || ( !blackImages[1].data ) )
   {
-     ts->set_failed_test_info(cvtest::TS::FAIL_INVALID_TEST_DATA);
+    ts->set_failed_test_info( cvtest::TS::FAIL_INVALID_TEST_DATA );
   }
 
   // Computing stereo rectify parameters
   Mat R1, R2, P1, P2, Q;
   Rect validRoi[2];
-  stereoRectify(cam1intrinsics, cam1distCoeffs, cam2intrinsics, cam2distCoeffs, imagesSize, R, T, R1, R2, P1, P2, Q, 0,
-                -1, imagesSize, &validRoi[0], &validRoi[1]);
+  stereoRectify( cam1intrinsics, cam1distCoeffs, cam2intrinsics, cam2distCoeffs, imagesSize, R, T, R1, R2, P1, P2, Q, 0,
+                 -1, imagesSize, &validRoi[0], &validRoi[1] );
 
   Mat map1x, map1y, map2x, map2y;
-  initUndistortRectifyMap(cam1intrinsics, cam1distCoeffs, R1, P1, imagesSize, CV_32FC1, map1x, map1y);
-  initUndistortRectifyMap(cam2intrinsics, cam2distCoeffs, R2, P2, imagesSize, CV_32FC1, map2x, map2y);
+  initUndistortRectifyMap( cam1intrinsics, cam1distCoeffs, R1, P1, imagesSize, CV_32FC1, map1x, map1y );
+  initUndistortRectifyMap( cam2intrinsics, cam2distCoeffs, R2, P2, imagesSize, CV_32FC1, map2x, map2y );
 
   vector<vector<Mat> > captured_pattern;
-  captured_pattern.resize(2);
-  captured_pattern[0].resize(numberOfPatternImages);
-  captured_pattern[1].resize(numberOfPatternImages);
+  captured_pattern.resize( 2 );
+  captured_pattern[0].resize( numberOfPatternImages );
+  captured_pattern[1].resize( numberOfPatternImages );
 
   // Loading and rectifying pattern images
   for( size_t i = 0; i < numberOfPatternImages; i++ )
   {
-      ostringstream name1;
-      name1 << "pattern_cam1_im" << i + 1 << ".png";
-      captured_pattern[0][i] = imread(folder + name1.str(), 0);
-      ostringstream name2;
-      name2 << "pattern_cam2_im" << i + 1 << ".png";
-      captured_pattern[1][i] = imread(folder + name2.str(), 0);
+    ostringstream name1;
+    name1 << "pattern_cam1_im" << i + 1 << ".png";
+    captured_pattern[0][i] = imread( folder + name1.str(), 0 );
+    ostringstream name2;
+    name2 << "pattern_cam2_im" << i + 1 << ".png";
+    captured_pattern[1][i] = imread( folder + name2.str(), 0 );
 
-      if( (!captured_pattern[0][i].data) || (!captured_pattern[1][i].data) )
-      {
-        ts->set_failed_test_info(cvtest::TS::FAIL_INVALID_TEST_DATA);
-      }
+    if( (!captured_pattern[0][i].data) || (!captured_pattern[1][i].data) )
+    {
+      ts->set_failed_test_info( cvtest::TS::FAIL_INVALID_TEST_DATA );
+    }
 
-      remap(captured_pattern[0][i], captured_pattern[0][i], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
-      remap(captured_pattern[1][i], captured_pattern[1][i], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+    remap( captured_pattern[0][i], captured_pattern[0][i], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar() );
+    remap( captured_pattern[1][i], captured_pattern[1][i], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar() );
 
   }
 
   // Rectifying white and black images
-  remap(whiteImages[0], whiteImages[0], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
-  remap(whiteImages[1], whiteImages[1], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+  remap( whiteImages[0], whiteImages[0], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar() );
+  remap( whiteImages[1], whiteImages[1], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar() );
 
-  remap(blackImages[0], blackImages[0], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
-  remap(blackImages[1], blackImages[1], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+  remap( blackImages[0], blackImages[0], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar() );
+  remap( blackImages[1], blackImages[1], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar() );
 
   // Setting up threshold parameters to reconstruct only the plane in foreground
-  graycode->setBlackThreshold(55);
-  graycode->setWhiteThreshold(10);
+  graycode->setBlackThreshold( 55 );
+  graycode->setWhiteThreshold( 10 );
 
   // Computing the disparity map
   Mat disparityMap;
-  bool decoded = graycode->decode(captured_pattern, disparityMap, blackImages, whiteImages,
-                                  structured_light::DECODE_3D_UNDERWORLD);
-  EXPECT_TRUE(decoded);
+  bool decoded = graycode->decode( captured_pattern, disparityMap, blackImages, whiteImages,
+                                   structured_light::DECODE_3D_UNDERWORLD );
+  EXPECT_TRUE( decoded );
 
   // Computing the point cloud
   Mat pointcloud;
-  disparityMap.convertTo(disparityMap, CV_32FC1);
-  reprojectImageTo3D(disparityMap, pointcloud, Q, true, -1);
+  disparityMap.convertTo( disparityMap, CV_32FC1 );
+  reprojectImageTo3D( disparityMap, pointcloud, Q, true, -1 );
   // from mm (unit of calibration) to m
   pointcloud = pointcloud / 1000;
 
   // Setting up plane with ground truth plane values
-  Vec3f normal(plane_coefficients.val[0], plane_coefficients.val[1], plane_coefficients.val[2]);
-  Ptr<PlaneBase> plane = Ptr<PlaneBase>(new Plane(m, normal, 0));
+  Vec3f normal( plane_coefficients.val[0], plane_coefficients.val[1], plane_coefficients.val[2] );
+  Ptr<PlaneBase> plane = Ptr<PlaneBase>( new Plane( m, normal, 0 ) );
 
   // Computing the distance of every point of the pointcloud from ground truth plane
   float sum_d = 0;
   int cont = 0;
   for( int i = 0; i < disparityMap.rows; i++ )
   {
-     for( int j = 0; j < disparityMap.cols; j++ )
-     {
-        float value = disparityMap.at<float>(i, j);
-        if( value != 0 )
-        {
-           Vec3f point = pointcloud.at<Vec3f>(i, j);
-           sum_d += plane->distance(point);
-           cont++;
-        }
+    for( int j = 0; j < disparityMap.cols; j++ )
+    {
+      float value = disparityMap.at<float>( i, j );
+      if( value != 0 )
+      {
+        Vec3f point = pointcloud.at<Vec3f>( i, j );
+        sum_d += plane->distance( point );
+        cont++;
       }
-   }
+    }
+  }
 
   sum_d /= cont;
 
-  // test pass if the mean of points distance from ground truth plane is inferior to 3 mm
-  EXPECT_LE(sum_d, 0.003);
+  // test pass if the mean of points distance from ground truth plane is lower than 3 mm
+  EXPECT_LE( sum_d, 0.003 );
 }
 
 /****************************************************************************************\
 *                                Test registration                                     *
  \****************************************************************************************/
 
-TEST(GrayCodePattern, plane_reconstruction)
+TEST( GrayCodePattern, plane_reconstruction )
 {
   CV_PlaneTest test;
   test.safe_run();

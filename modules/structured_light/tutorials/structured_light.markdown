@@ -1,4 +1,4 @@
-Structured Light tutorial {#tutorial_structured_light}
+Structured Light tutorials {#tutorial_structured_light}
 =============================================================
 
 -   @subpage tutorial_capture_graycode_pattern
@@ -15,8 +15,7 @@ Structured Light tutorial {#tutorial_structured_light}
 
     _Author:_ Roberta Ravanelli
 
-    You will learn how to decode a previously acquired graycode pattern, generating a pointcloud.
-
+    You will learn how to decode a previously acquired Gray code pattern, generating a pointcloud.
 
 
 

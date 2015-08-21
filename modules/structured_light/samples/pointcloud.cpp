@@ -60,17 +60,16 @@ static const char* keys =
 
 static void help()
 {
-  cout
-      << "\nThis example shows how to use the \"Structured Light module\" to decode a previously acquired gray code pattern, generating a pointcloud"
-      "\nCall:\n"
-      "./example_structured_light_pointcloud <images_list> <calib_param_path> <proj_width> <proj_height> <white_thresh> <black_thresh>\n"
-      << endl;
+  cout << "\nThis example shows how to use the \"Structured Light module\" to decode a previously acquired gray code pattern, generating a pointcloud"
+        "\nCall:\n"
+        "./example_structured_light_pointcloud <images_list> <calib_param_path> <proj_width> <proj_height> <white_thresh> <black_thresh>\n"
+        << endl;
 }
 
-static bool readStringList(const string& filename, vector<string>& l)
+static bool readStringList( const string& filename, vector<string>& l )
 {
-  l.resize(0);
-  FileStorage fs(filename, FileStorage::READ);
+  l.resize( 0 );
+  FileStorage fs( filename, FileStorage::READ );
   if( !fs.isOpened() )
   {
     cerr << "failed to open " << filename << endl;
@@ -86,7 +85,7 @@ static bool readStringList(const string& filename, vector<string>& l)
   FileNodeIterator it = n.begin(), it_end = n.end();
   for( ; it != it_end; ++it )
   {
-    l.push_back((string) *it);
+    l.push_back( ( string ) *it );
   }
 
   n = fs["cam2"];
@@ -99,7 +98,7 @@ static bool readStringList(const string& filename, vector<string>& l)
   it = n.begin(), it_end = n.end();
   for( ; it != it_end; ++it )
   {
-    l.push_back((string) *it);
+    l.push_back( ( string ) *it );
   }
 
   if( l.size() % 2 != 0 )
@@ -110,15 +109,15 @@ static bool readStringList(const string& filename, vector<string>& l)
   return true;
 }
 
-int main(int argc, char** argv)
+int main( int argc, char** argv )
 {
   structured_light::GrayCodePattern::Params params;
-  CommandLineParser parser(argc, argv, keys);
-  String images_file = parser.get<String>(0);
-  String calib_file = parser.get<String>(1);
+  CommandLineParser parser( argc, argv, keys );
+  String images_file = parser.get<String>( 0 );
+  String calib_file = parser.get<String>( 1 );
 
-  params.width = parser.get<int>(2);
-  params.height = parser.get<int>(3);
+  params.width = parser.get<int>( 2 );
+  params.height = parser.get<int>( 3 );
 
   if( images_file.empty() || calib_file.empty() || params.width < 1 || params.height < 1 || argc < 5 || argc > 7 )
   {
@@ -127,22 +126,22 @@ int main(int argc, char** argv)
   }
 
   // Set up GraycodePattern with params
-  Ptr<structured_light::GrayCodePattern> graycode = structured_light::GrayCodePattern::create(params);
+  Ptr<structured_light::GrayCodePattern> graycode = structured_light::GrayCodePattern::create( params );
   size_t white_thresh = 0;
   size_t black_thresh = 0;
 
   if( argc == 7 )
   {
     // If passed, setting the white and black threshold, otherwise using default values
-    white_thresh = parser.get<size_t>(4);
-    black_thresh = parser.get<size_t>(5);
+    white_thresh = parser.get<size_t>( 4 );
+    black_thresh = parser.get<size_t>( 5 );
 
-    graycode->setWhiteThreshold(white_thresh);
-    graycode->setBlackThreshold(black_thresh);
+    graycode->setWhiteThreshold( white_thresh );
+    graycode->setBlackThreshold( black_thresh );
   }
 
   vector<string> imagelist;
-  bool ok = readStringList(images_file, imagelist);
+  bool ok = readStringList( images_file, imagelist );
   if( !ok || imagelist.empty() )
   {
     cout << "can not open " << images_file << " or the string list is empty" << endl;
@@ -150,10 +149,10 @@ int main(int argc, char** argv)
     return -1;
   }
 
-  FileStorage fs(calib_file, FileStorage::READ);
+  FileStorage fs( calib_file, FileStorage::READ );
   if( !fs.isOpened() )
   {
-    cout << "Failed to open Calibration Data File." << std::endl;
+    cout << "Failed to open Calibration Data File." << endl;
     help();
     return -1;
   }
@@ -180,41 +179,41 @@ int main(int argc, char** argv)
     return -1;
   }
 
-  size_t numberOfPatternImages = graycode ->getNumberOfPatternImages();
-  std::vector<std::vector<Mat> > captured_pattern;
-  captured_pattern.resize(2);
-  captured_pattern[0].resize(numberOfPatternImages);
-  captured_pattern[1].resize(numberOfPatternImages);
+  size_t numberOfPatternImages = graycode->getNumberOfPatternImages();
+  vector<vector<Mat> > captured_pattern;
+  captured_pattern.resize( 2 );
+  captured_pattern[0].resize( numberOfPatternImages );
+  captured_pattern[1].resize( numberOfPatternImages );
 
-  Mat color = imread(imagelist[numberOfPatternImages]);
+  Mat color = imread( imagelist[numberOfPatternImages], IMREAD_COLOR );
   Size imagesSize = color.size();
 
   // Stereo rectify
   cout << "Rectifying images..." << endl;
   Mat R1, R2, P1, P2, Q;
   Rect validRoi[2];
-  stereoRectify(cam1intrinsics, cam1distCoeffs, cam2intrinsics, cam2distCoeffs, imagesSize, R, T, R1, R2, P1, P2, Q, 0,
-                -1, imagesSize, &validRoi[0], &validRoi[1]);
+  stereoRectify( cam1intrinsics, cam1distCoeffs, cam2intrinsics, cam2distCoeffs, imagesSize, R, T, R1, R2, P1, P2, Q, 0,
+                -1, imagesSize, &validRoi[0], &validRoi[1] );
 
   Mat map1x, map1y, map2x, map2y;
-  initUndistortRectifyMap(cam1intrinsics, cam1distCoeffs, R1, P1, imagesSize, CV_32FC1, map1x, map1y);
-  initUndistortRectifyMap(cam2intrinsics, cam2distCoeffs, R2, P2, imagesSize, CV_32FC1, map2x, map2y);
+  initUndistortRectifyMap( cam1intrinsics, cam1distCoeffs, R1, P1, imagesSize, CV_32FC1, map1x, map1y );
+  initUndistortRectifyMap( cam2intrinsics, cam2distCoeffs, R2, P2, imagesSize, CV_32FC1, map2x, map2y );
 
   // Loading pattern images
   for( size_t i = 0; i < numberOfPatternImages; i++ )
   {
-    captured_pattern[0][i] = imread(imagelist[i], 0);
-    captured_pattern[1][i] = imread(imagelist[i + numberOfPatternImages + 2], 0);
+    captured_pattern[0][i] = imread( imagelist[i], IMREAD_GRAYSCALE );
+    captured_pattern[1][i] = imread( imagelist[i + numberOfPatternImages + 2], IMREAD_GRAYSCALE );
 
     if( (!captured_pattern[0][i].data) || (!captured_pattern[1][i].data) )
     {
-       cout << "Empty images" << endl;
-       help();
-       return -1;
+      cout << "Empty images" << endl;
+      help();
+      return -1;
     }
 
-    remap(captured_pattern[1][i], captured_pattern[1][i], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
-    remap(captured_pattern[0][i], captured_pattern[0][i], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+    remap( captured_pattern[1][i], captured_pattern[1][i], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar() );
+    remap( captured_pattern[0][i], captured_pattern[0][i], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar() );
 
   }
   cout << "done" << endl;
@@ -222,69 +221,68 @@ int main(int argc, char** argv)
   vector<Mat> blackImages;
   vector<Mat> whiteImages;
 
-  blackImages.resize(2);
-  whiteImages.resize(2);
+  blackImages.resize( 2 );
+  whiteImages.resize( 2 );
 
   // Loading images (all white + all black) needed for shadows computation
-  cvtColor(color, whiteImages[0], COLOR_RGB2GRAY);
+  cvtColor( color, whiteImages[0], COLOR_RGB2GRAY );
 
-  whiteImages[1] = imread(imagelist[2 *numberOfPatternImages + 2], 0);
-  blackImages[0] = imread(imagelist[numberOfPatternImages + 1], 0);
-  blackImages[1] = imread(imagelist[2 * numberOfPatternImages + 2 + 1], 0);
+  whiteImages[1] = imread( imagelist[2 * numberOfPatternImages + 2], IMREAD_GRAYSCALE );
+  blackImages[0] = imread( imagelist[numberOfPatternImages + 1], IMREAD_GRAYSCALE );
+  blackImages[1] = imread( imagelist[2 * numberOfPatternImages + 2 + 1], IMREAD_GRAYSCALE );
 
-  remap(color, color, map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+  remap( color, color, map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar() );
 
-  remap(whiteImages[0], whiteImages[0], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
-  remap(whiteImages[1], whiteImages[1], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+  remap( whiteImages[0], whiteImages[0], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar() );
+  remap( whiteImages[1], whiteImages[1], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar() );
 
-  remap(blackImages[0], blackImages[0], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
-  remap(blackImages[1], blackImages[1], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar());
+  remap( blackImages[0], blackImages[0], map2x, map2y, INTER_NEAREST, BORDER_CONSTANT, Scalar() );
+  remap( blackImages[1], blackImages[1], map1x, map1y, INTER_NEAREST, BORDER_CONSTANT, Scalar() );
 
   cout << endl << "Decoding pattern ..." << endl;
   Mat disparityMap;
-  bool decoded = graycode->decode(captured_pattern, disparityMap, blackImages, whiteImages,
-                                  structured_light::DECODE_3D_UNDERWORLD);
+  bool decoded = graycode->decode( captured_pattern, disparityMap, blackImages, whiteImages,
+                                  structured_light::DECODE_3D_UNDERWORLD );
   if( decoded )
   {
-      cout << endl << "pattern decoded" << endl;
+    cout << endl << "pattern decoded" << endl;
 
-      Mat cm_disp, scaledDisparityMap;
-      double min;
-      double max;
-      minMaxIdx(disparityMap, &min, &max);
-      cout << "disp min " << min << endl << "disp max " << max << endl;
+    // To better visualize the result, apply a colormap to the computed disparity
+    double min;
+    double max;
+    minMaxIdx(disparityMap, &min, &max);
+    Mat cm_disp, scaledDisparityMap;
+    cout << "disp min " << min << endl << "disp max " << max << endl;
+    convertScaleAbs( disparityMap, scaledDisparityMap, 255 / ( max - min ) );
+    applyColorMap( scaledDisparityMap, cm_disp, COLORMAP_JET );
 
-      // To better visualize the result, apply a colormap to the computed disparity
-      convertScaleAbs(disparityMap, scaledDisparityMap, 255 / (max - min));
-      applyColorMap(scaledDisparityMap, cm_disp, COLORMAP_JET);
-      // Show the result
-      resize(cm_disp, cm_disp, Size(640, 480));
-      imshow("cm disparity m", cm_disp);
+    // Show the result
+    resize( cm_disp, cm_disp, Size( 640, 480 ) );
+    imshow( "cm disparity m", cm_disp );
 
-      // Compute a mask to remove background
-      Mat dst, thresholded_disp;
-      threshold(scaledDisparityMap, thresholded_disp, 0, 255, THRESH_OTSU + THRESH_BINARY);
-      resize(thresholded_disp, dst, Size(640, 480));
-      imshow("threshold disp otsu", dst);
+    // Compute the point cloud
+    Mat pointcloud;
+    disparityMap.convertTo( disparityMap, CV_32FC1 );
+    reprojectImageTo3D( disparityMap, pointcloud, Q, true, -1 );
 
-      // Compute the point cloud
-      Mat pointcloud;
-      disparityMap.convertTo(disparityMap, CV_32FC1);
-      reprojectImageTo3D(disparityMap, pointcloud, Q, true, -1);
+    // Compute a mask to remove background
+    Mat dst, thresholded_disp;
+    threshold( scaledDisparityMap, thresholded_disp, 0, 255, THRESH_OTSU + THRESH_BINARY );
+    resize( thresholded_disp, dst, Size( 640, 480 ) );
+    imshow( "threshold disp otsu", dst );
 
-      // Apply the mask to the point cloud
-      Mat pointcloud_tresh, color_tresh;
-      pointcloud.copyTo(pointcloud_tresh, thresholded_disp);
-      color.copyTo(color_tresh, thresholded_disp);
+    // Apply the mask to the point cloud
+    Mat pointcloud_tresh, color_tresh;
+    pointcloud.copyTo( pointcloud_tresh, thresholded_disp );
+    color.copyTo( color_tresh, thresholded_disp );
 
-      // Show the point cloud on viz
-      viz::Viz3d myWindow("Point cloud with color");
-      myWindow.setBackgroundMeshLab();
-      myWindow.showWidget("coosys", viz::WCoordinateSystem());
-      myWindow.showWidget("pointcloud", viz::WCloud(pointcloud_tresh, color_tresh));
-      myWindow.showWidget("text2d", viz::WText("Point cloud", Point(20, 20), 20, viz::Color::green()));
-      myWindow.spin();
-
+    // Show the point cloud on viz
+    viz::Viz3d myWindow( "Point cloud with color" );
+    myWindow.setBackgroundMeshLab();
+    myWindow.showWidget( "coosys", viz::WCoordinateSystem() );
+    myWindow.showWidget( "pointcloud", viz::WCloud( pointcloud_tresh, color_tresh ) );
+    myWindow.showWidget( "text2d", viz::WText( "Point cloud", Point(20, 20), 20, viz::Color::green() ) );
+    myWindow.spin();
   }
 
   waitKey();

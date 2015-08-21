@@ -86,7 +86,7 @@ class CV_EXPORTS_W GrayCodePattern : public StructuredLightPattern
    @param parameters GrayCodePattern parameters GrayCodePattern::Params: the width and the height of the projector.
    */
   CV_WRAP
-  static Ptr<GrayCodePattern> create(const GrayCodePattern::Params &parameters = GrayCodePattern::Params());
+  static Ptr<GrayCodePattern> create( const GrayCodePattern::Params &parameters = GrayCodePattern::Params() );
 
   /** @brief Get the number of pattern images needed for the graycode pattern.
    *
@@ -104,7 +104,7 @@ class CV_EXPORTS_W GrayCodePattern : public StructuredLightPattern
    *
    */
   CV_WRAP
-  virtual void setWhiteThreshold(size_t value) = 0;
+  virtual void setWhiteThreshold( size_t value ) = 0;
 
   /** @brief Sets the value for black threshold, needed for decoding (shadowsmasks computation).
    *
@@ -114,7 +114,7 @@ class CV_EXPORTS_W GrayCodePattern : public StructuredLightPattern
    *
    */
   CV_WRAP
-  virtual void setBlackThreshold(size_t value) = 0;
+  virtual void setBlackThreshold( size_t value ) = 0;
 
   /** @brief Generates the all-black and all-white images needed for shadowMasks computation.
    *
@@ -126,7 +126,7 @@ class CV_EXPORTS_W GrayCodePattern : public StructuredLightPattern
    *  @param whiteImage The generated all-white CV_8U image, at projector's resolution.
    */
   CV_WRAP
-  virtual void getImagesForShadowMasks(InputOutputArray blackImage, InputOutputArray whiteImage) const = 0;
+  virtual void getImagesForShadowMasks( InputOutputArray blackImage, InputOutputArray whiteImage ) const = 0;
 
   /** @brief For a (x,y) pixel of a camera returns the corresponding projector pixel.
    *
@@ -139,7 +139,7 @@ class CV_EXPORTS_W GrayCodePattern : public StructuredLightPattern
    *  @param projPix Projector's pixel corresponding to the camera's pixel: projPix.x and projPix.y are the image coordinates of the projector’s pixel corresponding to the pixel being decoded in a camera.
    */
   CV_WRAP
-  virtual bool getProjPixel(InputArrayOfArrays patternImages, int x, int y, Point &projPix) const = 0;
+  virtual bool getProjPixel( InputArrayOfArrays patternImages, int x, int y, Point &projPix ) const = 0;
 };
 
 //! @}

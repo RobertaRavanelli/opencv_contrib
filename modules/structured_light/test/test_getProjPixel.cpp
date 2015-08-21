@@ -60,7 +60,7 @@ CV_GetProjPixelTest::CV_GetProjPixelTest(){}
 
 CV_GetProjPixelTest::~CV_GetProjPixelTest(){}
 
-void CV_GetProjPixelTest::run(int)
+void CV_GetProjPixelTest::run( int )
 {
   // Using default projector resolution (1024 x 768)
   Ptr<structured_light::GrayCodePattern> graycode = structured_light::GrayCodePattern::create();
@@ -68,8 +68,8 @@ void CV_GetProjPixelTest::run(int)
   // Storage for pattern
   vector<Mat> pattern;
 
-  // Using default pattern color (black and white)
-  graycode->generate(pattern);
+  // Generate the pattern
+  graycode->generate( pattern );
 
   Point projPixel;
 
@@ -80,11 +80,11 @@ void CV_GetProjPixelTest::run(int)
   {
     for( size_t j = 0; j < image_height; j++ )
     {
-       //for a (x,y) pixel of the camera returns the corresponding projector pixel
-       bool error = graycode->getProjPixel(pattern, i, j, projPixel);
-       EXPECT_FALSE(error);
-       EXPECT_EQ(projPixel.y, j);
-       EXPECT_EQ(projPixel.x, i);
+      //for a (x,y) pixel of the camera returns the corresponding projector pixel
+      bool error = graycode->getProjPixel( pattern, i, j, projPixel );
+      EXPECT_FALSE( error );
+      EXPECT_EQ( projPixel.y, j );
+      EXPECT_EQ( projPixel.x, i );
     }
   }
 }
@@ -93,7 +93,7 @@ void CV_GetProjPixelTest::run(int)
 *                                Test registration                                     *
 \****************************************************************************************/
 
-TEST(GrayCodePattern, getProjPixel)
+TEST( GrayCodePattern, getProjPixel )
 {
   CV_GetProjPixelTest test;
   test.safe_run();

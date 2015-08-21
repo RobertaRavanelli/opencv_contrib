@@ -10,8 +10,7 @@
  //                           License Agreement
  //                For Open Source Computer Vision Library
  //
- // Copyright (C) 2000-2008, Intel Corporation, all rights reserved.
- // Copyright (C) 2009, Willow Garage Inc., all rights reserved.
+ // Copyright (C) 2015, OpenCV Foundation, all rights reserved.
  // Third party copyrights are property of their respective owners.
  //
  // Redistribution and use in source and binary forms, with or without modification,
@@ -67,7 +66,7 @@ class CV_EXPORTS_W StructuredLightPattern : public virtual Algorithm
    @param patternImages The generated pattern: a vector<Mat>, in which each image is a CV_8U Mat at projector's resolution.
    */
   CV_WRAP
-  virtual bool generate(OutputArrayOfArrays patternImages) = 0;
+  virtual bool generate( OutputArrayOfArrays patternImages ) = 0;
 
   /** @brief Decodes the structured light pattern, generating a disparity map
 
@@ -79,9 +78,9 @@ class CV_EXPORTS_W StructuredLightPattern : public virtual Algorithm
    @note All the images must be at the same resolution.
    */
   CV_WRAP
-  virtual bool decode(InputArrayOfArrays patternImages, OutputArray disparityMap, InputArrayOfArrays blackImages =
+  virtual bool decode( InputArrayOfArrays patternImages, OutputArray disparityMap, InputArrayOfArrays blackImages =
                           noArray(),
-                      InputArrayOfArrays whiteImages = noArray(), int flags = DECODE_3D_UNDERWORLD) const = 0;
+                      InputArrayOfArrays whiteImages = noArray(), int flags = DECODE_3D_UNDERWORLD ) const = 0;
 };
 
 //! @}
